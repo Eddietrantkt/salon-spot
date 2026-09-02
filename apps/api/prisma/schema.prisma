@@ -1,0 +1,488 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  OWNER
+}
+
+/**
+ * Platform capability required to reserve a Workspace. It is separate from Salon ownership and Admin access.
+ */
+enum ProfessionalProfileStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProfessionalVerificationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum ProfessionalCredentialType {
+  LICENSE
+  INSURANCE
+}
+
+enum ProfessionalCredentialReviewStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  REVOKED
+}
+
+enum ProfessionalDocumentType {
+  IDENTITY
+  LICENSE
+  INSURANCE
+}
+
+enum ProfessionalDocumentStatus {
+  PENDING_UPLOAD
+  READY
+  REJECTED
+  DELETE_PENDING
+  DELETED
+}
+
+enum AdminPermissionKind {
+  VERIFY_PROFESSIONAL
+}
+
+/**
+ * Platform-level account state. This is intentionally separate from Salon membership.
+ */
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum WorkspaceStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AvailabilitySlotStatus {
+  OPEN
+  HELD
+  BOOKED
+  BLOCKED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum MediaStatus {
+  PENDING_UPLOAD
+  PROCESSING
+  READY
+  REJECTED
+  DELETE_PENDING
+  DELETED
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+}
+
+model User {
+  id                              String                         @id @default(cuid()) @db.VarChar(30)
+  email                           String                         @unique @db.VarChar(320)
+  displayName                     String                         @db.VarChar(120)
+  passwordHash                    String                         @db.VarChar(255)
+  status                          UserStatus                     @default(ACTIVE)
+  createdAt                       DateTime                       @default(now()) @db.DateTime(3)
+  memberships                     SalonMembership[]
+  authSessions                    AuthSession[]
+  bookings                        Booking[]                      @relation("ProfessionalBookings")
+  holds                           SlotHold[]
+  idempotency                     IdempotencyRecord[]
+  auditEvents                     AuditEvent[]
+  adminAccess                     AdminAccess?
+  professionalProfile             ProfessionalProfile?
+  passwordResetTokens             PasswordResetToken[]
+  professionalVerificationReviews ProfessionalVerificationCase[] @relation("ProfessionalVerificationReviewer")
+}
+
+/**
+ * A user may reserve Workspaces only while this profile is active.
+ */
+model ProfessionalProfile {
+  userId             String                         @id @db.VarChar(30)
+  status             ProfessionalProfileStatus      @default(PENDING)
+  verificationStatus ProfessionalVerificationStatus @default(DRAFT)
+  phone              String?                        @db.VarChar(40)
+  city               String?                        @db.VarChar(120)
+  bio                String?                        @db.VarChar(1000)
+  specialties        Json?
+  createdAt          DateTime                       @default(now()) @db.DateTime(3)
+  updatedAt          DateTime                       @updatedAt @db.DateTime(3)
+  user               User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verificationCases  ProfessionalVerificationCase[]
+  credentials        ProfessionalCredential[]
+  documents          ProfessionalDocument[]
+}
+
+/**
+ * A local-operations grant. It never conveys ownership of a Salon.
+ */
+model AdminAccess {
+  userId      String            @id @db.VarChar(30)
+  grantedAt   DateTime          @default(now()) @db.DateTime(3)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissions AdminPermission[]
+}
+
+/**
+ * A narrow privileged capability; platform Admin access alone does not imply document-review authority.
+ */
+model AdminPermission {
+  userId     String              @db.VarChar(30)
+  permission AdminPermissionKind
+  grantedAt  DateTime            @default(now()) @db.DateTime(3)
+  admin      AdminAccess         @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([userId, permission])
+}
+
+/**
+ * One review submission and its immutable evidence set.
+ */
+model ProfessionalVerificationCase {
+  id                 String                         @id @default(cuid()) @db.VarChar(30)
+  professionalUserId String                         @db.VarChar(30)
+  status             ProfessionalVerificationStatus @default(DRAFT)
+  submittedAt        DateTime?                      @db.DateTime(3)
+  reviewedAt         DateTime?                      @db.DateTime(3)
+  reviewerUserId     String?                        @db.VarChar(30)
+  reasonCode         String?                        @db.VarChar(80)
+  reasonDetail       String?                        @db.VarChar(500)
+  createdAt          DateTime                       @default(now()) @db.DateTime(3)
+  updatedAt          DateTime                       @updatedAt @db.DateTime(3)
+  profile            ProfessionalProfile            @relation(fields: [professionalUserId], references: [userId], onDelete: Restrict)
+  reviewer           User?                          @relation("ProfessionalVerificationReviewer", fields: [reviewerUserId], references: [id], onDelete: SetNull)
+  credentials        ProfessionalCredential[]
+  documents          ProfessionalDocument[]
+
+  @@unique([id, professionalUserId])
+  @@index([professionalUserId, status, createdAt], map: "ProfVerifyCase_profile_status_created_idx")
+  @@index([reviewerUserId, reviewedAt])
+}
+
+/**
+ * Structured license or insurance data; expiry is derived from expiresAt, not stored as another status.
+ */
+model ProfessionalCredential {
+  id                 String                             @id @default(cuid()) @db.VarChar(30)
+  verificationCaseId String                             @db.VarChar(30)
+  professionalUserId String                             @db.VarChar(30)
+  type               ProfessionalCredentialType
+  referenceNumber    String                             @db.VarChar(160)
+  issuingAuthority   String?                            @db.VarChar(160)
+  jurisdiction       String?                            @db.VarChar(120)
+  issuedAt           DateTime?                          @db.Date
+  expiresAt          DateTime                           @db.Date
+  reviewStatus       ProfessionalCredentialReviewStatus @default(PENDING)
+  reviewedAt         DateTime?                          @db.DateTime(3)
+  revokedAt          DateTime?                          @db.DateTime(3)
+  supersededAt       DateTime?                          @db.DateTime(3)
+  createdAt          DateTime                           @default(now()) @db.DateTime(3)
+  updatedAt          DateTime                           @updatedAt @db.DateTime(3)
+  verificationCase   ProfessionalVerificationCase       @relation(fields: [verificationCaseId, professionalUserId], references: [id, professionalUserId], onDelete: Restrict, map: "ProfCredential_case_profile_fkey")
+  profile            ProfessionalProfile                @relation(fields: [professionalUserId], references: [userId], onDelete: Restrict)
+  documents          ProfessionalDocument[]
+
+  @@unique([id, professionalUserId])
+  @@index([professionalUserId, type, reviewStatus])
+  @@index([expiresAt])
+}
+
+/**
+ * Metadata for private verification evidence. File bytes live outside MySQL and are never public listing media.
+ */
+model ProfessionalDocument {
+  id                 String                       @id @default(cuid()) @db.VarChar(30)
+  verificationCaseId String                       @db.VarChar(30)
+  professionalUserId String                       @db.VarChar(30)
+  credentialId       String?                      @db.VarChar(30)
+  type               ProfessionalDocumentType
+  storageKey         String                       @unique @db.VarChar(512)
+  contentType        String                       @db.VarChar(64)
+  byteSize           Int?
+  checksumSha256     String?                      @db.Char(64)
+  uploadExpiresAt    DateTime?                    @db.DateTime(3)
+  status             ProfessionalDocumentStatus   @default(PENDING_UPLOAD)
+  failureReason      String?                      @db.VarChar(255)
+  deletedAt          DateTime?                    @db.DateTime(3)
+  createdAt          DateTime                     @default(now()) @db.DateTime(3)
+  updatedAt          DateTime                     @updatedAt @db.DateTime(3)
+  verificationCase   ProfessionalVerificationCase @relation(fields: [verificationCaseId, professionalUserId], references: [id, professionalUserId], onDelete: Restrict, map: "ProfDocument_case_profile_fkey")
+  profile            ProfessionalProfile          @relation(fields: [professionalUserId], references: [userId], onDelete: Restrict)
+  credential         ProfessionalCredential?      @relation(fields: [credentialId, professionalUserId], references: [id, professionalUserId], onDelete: Restrict)
+
+  @@index([professionalUserId, type, status])
+  @@index([verificationCaseId, status])
+}
+
+/**
+ * Role-agnostic one-time password recovery token. Only a hash is persisted.
+ */
+model PasswordResetToken {
+  id        String    @id @default(cuid()) @db.VarChar(30)
+  userId    String    @db.VarChar(30)
+  tokenHash String    @unique @db.Char(64)
+  expiresAt DateTime  @db.DateTime(3)
+  usedAt    DateTime? @db.DateTime(3)
+  createdAt DateTime  @default(now()) @db.DateTime(3)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt, expiresAt])
+}
+
+/**
+ * Last known outcome for each independently scheduled worker.
+ */
+model WorkerHeartbeat {
+  workerName      String    @id @db.VarChar(80)
+  lastSucceededAt DateTime? @db.DateTime(3)
+  lastFailedAt    DateTime? @db.DateTime(3)
+  lastError       String?   @db.VarChar(500)
+  updatedAt       DateTime  @updatedAt @db.DateTime(3)
+}
+
+model AuthSession {
+  id               String    @id @default(cuid()) @db.VarChar(30)
+  userId           String    @db.VarChar(30)
+  refreshTokenHash String    @unique @db.VarChar(128)
+  familyId         String    @db.VarChar(30)
+  expiresAt        DateTime  @db.DateTime(3)
+  revokedAt        DateTime? @db.DateTime(3)
+  replacedById     String?   @db.VarChar(30)
+  createdAt        DateTime  @default(now()) @db.DateTime(3)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([familyId, revokedAt])
+}
+
+model Salon {
+  id           String            @id @default(cuid()) @db.VarChar(30)
+  name         String            @db.VarChar(160)
+  area         String            @db.VarChar(120)
+  timezone     String            @db.VarChar(64)
+  coverMediaId String?           @unique @db.VarChar(30)
+  createdAt    DateTime          @default(now()) @db.DateTime(3)
+  memberships  SalonMembership[]
+  workspaces   Workspace[]
+  media        SalonMedia[]      @relation("SalonMedia")
+  coverMedia   SalonMedia?       @relation("SalonCover", fields: [coverMediaId], references: [id])
+}
+
+model SalonMembership {
+  salonId   String         @db.VarChar(30)
+  userId    String         @db.VarChar(30)
+  role      MembershipRole
+  createdAt DateTime       @default(now()) @db.DateTime(3)
+  salon     Salon          @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([salonId, userId])
+  @@index([userId])
+}
+
+model Workspace {
+  id            String                  @id @default(cuid()) @db.VarChar(30)
+  salonId       String                  @db.VarChar(30)
+  name          String                  @db.VarChar(160)
+  status        WorkspaceStatus         @default(DRAFT)
+  coverMediaId  String?                 @unique @db.VarChar(30)
+  createdAt     DateTime                @default(now()) @db.DateTime(3)
+  salon         Salon                   @relation(fields: [salonId], references: [id], onDelete: Restrict)
+  rentalOptions RentalOption[]
+  media         WorkspaceMedia[]        @relation("WorkspaceMedia")
+  coverMedia    WorkspaceMedia?         @relation("WorkspaceCover", fields: [coverMediaId], references: [id])
+  calendarLocks WorkspaceCalendarLock[]
+  slots         AvailabilitySlot[]
+
+  @@index([salonId, status])
+}
+
+model RentalOption {
+  id          String             @id @default(cuid()) @db.VarChar(30)
+  workspaceId String             @db.VarChar(30)
+  label       String             @db.VarChar(120)
+  priceCents  Int
+  createdAt   DateTime           @default(now()) @db.DateTime(3)
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  slots       AvailabilitySlot[]
+
+  @@unique([id, workspaceId])
+}
+
+model WorkspaceCalendarLock {
+  workspaceId String    @db.VarChar(30)
+  localDate   DateTime  @db.Date
+  createdAt   DateTime  @default(now()) @db.DateTime(3)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, localDate])
+}
+
+model AvailabilitySlot {
+  id             String                 @id @default(cuid()) @db.VarChar(30)
+  workspaceId    String                 @db.VarChar(30)
+  rentalOptionId String                 @db.VarChar(30)
+  startsAt       DateTime               @db.DateTime(3)
+  endsAt         DateTime               @db.DateTime(3)
+  localDate      DateTime               @db.Date
+  status         AvailabilitySlotStatus @default(OPEN)
+  createdAt      DateTime               @default(now()) @db.DateTime(3)
+  updatedAt      DateTime               @updatedAt @db.DateTime(3)
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  rentalOption   RentalOption           @relation(fields: [rentalOptionId, workspaceId], references: [id, workspaceId], onDelete: Restrict)
+  hold           SlotHold?
+  booking        Booking?
+
+  @@unique([workspaceId, startsAt, endsAt])
+  @@index([workspaceId, startsAt, endsAt])
+  @@index([workspaceId, localDate, status])
+  @@index([status, startsAt])
+  @@index([status, localDate])
+}
+
+model SlotHold {
+  id                 String           @id @default(cuid()) @db.VarChar(30)
+  availabilitySlotId String           @unique @db.VarChar(30)
+  professionalUserId String           @db.VarChar(30)
+  expiresAt          DateTime         @db.DateTime(3)
+  createdAt          DateTime         @default(now()) @db.DateTime(3)
+  slot               AvailabilitySlot @relation(fields: [availabilitySlotId], references: [id], onDelete: Cascade)
+  professional       User             @relation(fields: [professionalUserId], references: [id], onDelete: Restrict)
+
+  @@index([expiresAt])
+}
+
+model Booking {
+  id                 String           @id @default(cuid()) @db.VarChar(30)
+  availabilitySlotId String           @unique @db.VarChar(30)
+  professionalUserId String           @db.VarChar(30)
+  status             BookingStatus    @default(CONFIRMED)
+  workspaceName      String           @db.VarChar(160)
+  rentalOptionLabel  String           @db.VarChar(120)
+  priceCents         Int
+  startsAt           DateTime         @db.DateTime(3)
+  endsAt             DateTime         @db.DateTime(3)
+  salonTimezone      String           @db.VarChar(64)
+  localDate          DateTime         @db.Date
+  cancelledAt        DateTime?        @db.DateTime(3)
+  completedAt        DateTime?        @db.DateTime(3)
+  createdAt          DateTime         @default(now()) @db.DateTime(3)
+  slot               AvailabilitySlot @relation(fields: [availabilitySlotId], references: [id], onDelete: Restrict)
+  professional       User             @relation("ProfessionalBookings", fields: [professionalUserId], references: [id], onDelete: Restrict)
+
+  @@index([professionalUserId, startsAt])
+  @@index([status, endsAt])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(cuid()) @db.VarChar(30)
+  actorUserId    String   @db.VarChar(30)
+  scope          String   @db.VarChar(80)
+  idempotencyKey String   @db.VarChar(255)
+  requestHash    String   @db.VarChar(128)
+  statusCode     Int
+  responseBody   Json
+  createdAt      DateTime @default(now()) @db.DateTime(3)
+  actor          User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([actorUserId, scope, idempotencyKey])
+}
+
+model SalonMedia {
+  id              String      @id @default(cuid()) @db.VarChar(30)
+  salonId         String      @db.VarChar(30)
+  storageKey      String      @db.VarChar(512)
+  contentType     String      @db.VarChar(64)
+  byteSize        Int?
+  checksumSha256  String?     @db.Char(64)
+  width           Int?
+  height          Int?
+  failureReason   String?     @db.VarChar(255)
+  uploadExpiresAt DateTime?   @db.DateTime(3)
+  status          MediaStatus @default(PENDING_UPLOAD)
+  sortOrder       Int         @default(0)
+  createdAt       DateTime    @default(now()) @db.DateTime(3)
+  updatedAt       DateTime    @updatedAt @db.DateTime(3)
+  salon           Salon       @relation("SalonMedia", fields: [salonId], references: [id], onDelete: Cascade)
+  coverOf         Salon?      @relation("SalonCover")
+
+  @@unique([salonId, storageKey])
+  @@index([salonId, status, sortOrder])
+}
+
+model WorkspaceMedia {
+  id              String      @id @default(cuid()) @db.VarChar(30)
+  workspaceId     String      @db.VarChar(30)
+  storageKey      String      @db.VarChar(512)
+  contentType     String      @db.VarChar(64)
+  byteSize        Int?
+  checksumSha256  String?     @db.Char(64)
+  width           Int?
+  height          Int?
+  failureReason   String?     @db.VarChar(255)
+  uploadExpiresAt DateTime?   @db.DateTime(3)
+  status          MediaStatus @default(PENDING_UPLOAD)
+  sortOrder       Int         @default(0)
+  createdAt       DateTime    @default(now()) @db.DateTime(3)
+  updatedAt       DateTime    @updatedAt @db.DateTime(3)
+  workspace       Workspace   @relation("WorkspaceMedia", fields: [workspaceId], references: [id], onDelete: Cascade)
+  coverOf         Workspace?  @relation("WorkspaceCover")
+
+  @@unique([workspaceId, storageKey])
+  @@index([workspaceId, status, sortOrder])
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid()) @db.VarChar(30)
+  actorUserId String?  @db.VarChar(30)
+  entityType  String   @db.VarChar(80)
+  entityId    String   @db.VarChar(30)
+  action      String   @db.VarChar(120)
+  requestId   String?  @db.VarChar(64)
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now()) @db.DateTime(3)
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([requestId])
+}
+
+model OutboxEvent {
+  id          String       @id @default(cuid()) @db.VarChar(30)
+  topic       String       @db.VarChar(120)
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now()) @db.DateTime(3)
+  createdAt   DateTime     @default(now()) @db.DateTime(3)
+
+  @@index([status, availableAt])
+}

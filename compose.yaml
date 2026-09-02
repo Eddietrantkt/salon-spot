@@ -1,0 +1,21 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: salon_spot
+      MYSQL_USER: salon_spot
+      MYSQL_PASSWORD: salon_spot
+      MYSQL_ROOT_PASSWORD: local_root_only
+    ports:
+      - "3307:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  mysql-data:
+

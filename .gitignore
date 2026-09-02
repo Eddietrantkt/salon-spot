@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+.env.runtime
+.tmp_doc_review/
+coverage/
+.data/

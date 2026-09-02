@@ -1,0 +1,16 @@
+node_modules/
+**/node_modules/
+**/dist/
+.env
+.env.*
+!.env.runtime.example
+**/.env
+.data/
+media/
+coverage/
+.tmp_*/
+.git/
+*.log
+*.docx
+*.pdf
+stitch_the_salon_spot_marketplace.zip

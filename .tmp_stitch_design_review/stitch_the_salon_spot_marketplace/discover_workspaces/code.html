@@ -1,0 +1,437 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>The Salon Spot - Find Your Workspace</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts: Libre Caslon Text & Manrope -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#858383",
+                        "surface-container-highest": "#e4e2e2",
+                        "surface-container": "#efeded",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "surface-container-high": "#e9e8e7",
+                        "on-secondary-fixed": "#261900",
+                        "surface-bright": "#fbf9f8",
+                        "on-tertiary-container": "#848480",
+                        "on-secondary-container": "#785a1a",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed-variant": "#474744",
+                        "tertiary-container": "#1b1c19",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#5f5e5e",
+                        "on-surface": "#1b1c1c",
+                        "outline-variant": "#c4c7c7",
+                        "secondary-container": "#fed488",
+                        "surface": "#fbf9f8",
+                        "background": "#fbf9f8",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f2f0f0",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "primary-fixed": "#e5e2e1",
+                        "tertiary-fixed": "#e4e2dd",
+                        "on-tertiary-fixed": "#1b1c19",
+                        "surface-variant": "#e4e2e2",
+                        "inverse-primary": "#c8c6c5",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4201",
+                        "surface-container-low": "#f5f3f3",
+                        "secondary-fixed": "#ffdea5",
+                        "outline": "#747878",
+                        "secondary": "#775a19",
+                        "on-primary-fixed-variant": "#474746",
+                        "surface-dim": "#dbdad9",
+                        "on-background": "#1b1c1c",
+                        "tertiary": "#000000",
+                        "inverse-surface": "#303031",
+                        "primary-container": "#1c1b1b",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#e9c176",
+                        "primary": "#000000",
+                        "on-surface-variant": "#444748",
+                        "on-primary-fixed": "#1c1b1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "md": "24px",
+                        "margin-mobile": "16px",
+                        "xl": "80px",
+                        "lg": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Libre Caslon Text"],
+                        "label-md": ["Manrope"],
+                        "label-sm": ["Manrope"],
+                        "headline-lg": ["Libre Caslon Text"],
+                        "headline-lg-mobile": ["Libre Caslon Text"],
+                        "body-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "display-lg": ["Libre Caslon Text"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom styles for specific scrollbar hiding, etc. */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopNavBar (Desktop) -->
+<nav class="hidden md:flex fixed top-0 left-0 w-full h-[80px] z-50 flex justify-between items-center px-margin-desktop max-w-[1440px] mx-auto bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline shadow-sm dark:shadow-none transition-colors duration-300" id="desktop-nav">
+<!-- Logo -->
+<a class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim shrink-0" href="#">
+            The Salon Spot
+        </a>
+<!-- Navigation Links -->
+<div class="flex items-center gap-8">
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-secondary font-bold pb-1 text-label-md font-label-md" href="#">Home</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-medium hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-200 text-label-md font-label-md" href="#">Search</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-medium hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-200 text-label-md font-label-md" href="#">Bookings</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-medium hover:text-secondary dark:hover:text-secondary-fixed transition-colors duration-200 text-label-md font-label-md" href="#">Messages</a>
+</div>
+<!-- Trailing Action -->
+<div class="flex items-center gap-4 shrink-0">
+<div class="relative">
+<input class="hidden lg:block pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-label-sm font-label-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary w-48 transition-all" placeholder="Search..." type="text">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant hidden lg:block" style="font-size: 18px;">search</span>
+</div>
+<button class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant hover:border-secondary transition-colors">
+<img alt="Professional user profile" class="w-full h-full object-cover" data-alt="A professional headshot of a female beauty professional in a modern, well-lit studio. She is smiling gently. Soft, warm lighting highlights her features. The background is a clean, neutral architectural space, fitting a premium marketplace brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdZAfvMq2tVkpfd8tTBdF7VyS1VmO-yfDGkZGeFPHotc5SuPMRVrlxC0hcBb5L-yplEt-18O7tSf7lNsOtSlYEQJZoNOj1RiVDjBab3hMD0mLH9XfIq7bylnApN0Tn6Mdnxel_mEtpLis7_X8N7liZ8NwGbFAk-YGg3IWyq7B2cS72fBBUxNy90SixC0xxuv1TiVu_NFQ-8uthhsAe8C3nRABlL3ouy3zDOPU12HSJU8AjabX4g3GTTw">
+</button>
+</div>
+</nav>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full h-16 z-50 flex justify-around items-center px-margin-mobile pb-safe md:hidden bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-t border-outline-variant dark:border-outline shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-2xl p-2 w-16 scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] font-label-sm mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 w-16 hover:bg-surface-container dark:hover:bg-inverse-surface rounded-2xl transition-colors" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="text-[10px] font-label-sm mt-1">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 w-16 hover:bg-surface-container dark:hover:bg-inverse-surface rounded-2xl transition-colors" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-[10px] font-label-sm mt-1">Bookings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 w-16 hover:bg-surface-container dark:hover:bg-inverse-surface rounded-2xl transition-colors" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="text-[10px] font-label-sm mt-1">Messages</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 w-16 hover:bg-surface-container dark:hover:bg-inverse-surface rounded-2xl transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-label-sm mt-1">Profile</span>
+</a>
+</nav>
+<!-- Main Content Area -->
+<main class="pt-[80px] pb-[80px] md:pb-0 min-h-screen">
+<!-- Hero Section with Search -->
+<section class="relative px-margin-mobile md:px-margin-desktop py-lg md:py-24 max-w-[1440px] mx-auto overflow-hidden">
+<!-- Decorative background element -->
+<div class="absolute top-0 right-0 w-2/3 h-full bg-surface-container-low rounded-bl-[100px] -z-10 opacity-50"></div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-center">
+<!-- Hero Copy & Search Interface -->
+<div class="flex flex-col gap-8 z-10 pr-0 lg:pr-12">
+<div class="space-y-4">
+<h1 class="text-headline-lg-mobile md:text-display-lg font-display-lg text-on-surface">
+                            Elevate your craft in <br class="hidden md:block"> <span class="italic text-secondary">premium spaces</span>.
+                        </h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant max-w-lg">
+                            Discover and book luxury salon chairs, private suites, and creative studios. Hourly, daily, or long-term.
+                        </p>
+</div>
+<!-- Search Box (Bento style) -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-lg border border-outline-variant/30 flex flex-col gap-sm relative">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+<!-- Location Input -->
+<div class="flex flex-col gap-2">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">location_on</span>
+<input class="w-full h-[56px] pl-10 pr-4 bg-surface-bright border border-outline-variant rounded-lg text-body-md font-body-md focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" placeholder="City, neighborhood..." type="text">
+</div>
+</div>
+<!-- Date Input -->
+<div class="flex flex-col gap-2">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Dates</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">calendar_month</span>
+<input class="w-full h-[56px] pl-10 pr-4 bg-surface-bright border border-outline-variant rounded-lg text-body-md font-body-md focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all cursor-pointer" placeholder="Select dates..." readonly="" type="text" value="Oct 12 - Oct 14">
+</div>
+</div>
+</div>
+<!-- Specialty Input (Full width) -->
+<div class="flex flex-col gap-2">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Specialty</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">content_cut</span>
+<select class="w-full h-[56px] pl-10 pr-10 bg-surface-bright border border-outline-variant rounded-lg text-body-md font-body-md focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all appearance-none">
+<option value="">Any Specialty</option>
+<option value="hair">Hair Styling &amp; Color</option>
+<option value="nails">Nail Artistry</option>
+<option value="esthetics">Esthetics &amp; Skincare</option>
+<option value="massage">Massage Therapy</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<button class="mt-2 w-full h-[56px] bg-primary text-on-primary rounded-lg text-label-md font-label-md hover:bg-surface-tint transition-colors shadow-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">search</span>
+                            Find Spaces
+                        </button>
+</div>
+</div>
+<!-- Hero Imagery Grid (Bento Layout) -->
+<div class="hidden lg:grid grid-cols-2 grid-rows-2 gap-sm h-[600px] z-10">
+<div class="row-span-2 col-span-1 rounded-2xl overflow-hidden relative group">
+<img alt="Premium salon interior" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A wide, beautifully lit modern salon interior with polished concrete floors, minimalist arched mirrors, and sleek black styling chairs. Large floor-to-ceiling windows let in bright, natural daylight. Potted structural plants add a touch of warmth to the editorial, high-end architectural aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH-13AMoSh9vFQaRT4XvfKAoNbUMjkXYeySHdw2InPKshNXF02FhFdW9sXcA1kCvseiE4zXOaXn0fArVN6UK-2x7FHhCrhS1AxLBcw0orkCkyRr2U-SCoDjEW33b2dpnNoSLqCD-O7n9ER736oGRcYRq0b644eypt5GFven4ToWy88gXn7a283rQYG7IDnmDyY3x3RV9zvZa6bVPNk4IZtFW0kYoWndS7B4r-i8rG9frOsVRIhExBcrw">
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+<div class="absolute bottom-6 left-6 text-white">
+<p class="text-headline-md font-headline-md mb-1">Modern Hair Station</p>
+<p class="text-label-sm font-label-sm opacity-90 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span> West Hollywood</p>
+</div>
+</div>
+<div class="col-span-1 row-span-1 rounded-2xl overflow-hidden relative group">
+<img alt="Private esthetician suite" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A close-up shot of a pristine, white esthetician bed in a calming, soft-lit private suite. Warm neutral tones, a neatly folded plush towel, and subtle ambient lighting create a sophisticated, reliable, and relaxing mood suitable for a premium beauty marketplace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGuoD_hXonbSE0vFuRCgZNudwFN9IqJvO8dsNWplqXLY5DwkvahaNU8eX6mxrQdkwpZW4o5XeX7RW9mATsP37odJ0ODsigUNhb03ybiNw86gKlot-R8CX_TnjPQ7X48kIGfisYxB3qevi_kIjnq08O05XYBHJlJxi4OGEqNgCk-NO_JeV5RT_krVNNBS0P5vsF77Oqbu5fjZi52-FC4M74trYpeau5GMi5gXTUJXcBoMhYs5QfTz6XIA">
+</div>
+<div class="col-span-1 row-span-1 rounded-2xl overflow-hidden relative group bg-surface-container-high flex flex-col justify-center p-8 border border-outline-variant/50">
+<div class="w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">verified</span>
+</div>
+<h3 class="text-headline-md font-headline-md text-on-surface mb-2">Verified Spaces</h3>
+<p class="text-body-md font-body-md text-on-surface-variant">Every location is personally vetted for quality, amenities, and professional standards.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Featured Workspaces (Horizontal Scroll) -->
+<section class="px-margin-mobile md:px-margin-desktop py-lg max-w-[1440px] mx-auto">
+    <div class="flex justify-between items-end mb-6">
+        <div>
+            <h2 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-on-surface mb-1">Available Today</h2>
+            <p class="text-body-md font-body-md text-on-surface-variant">Instant bookings for your last-minute needs.</p>
+        </div>
+        <button class="hidden md:flex items-center gap-1 text-label-md font-label-md text-secondary hover:text-on-secondary-container transition-colors">
+            View all <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+    </div>
+    <div class="flex gap-gutter overflow-x-auto hide-scrollbar pb-4 -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 snap-x snap-mandatory">
+        <!-- Card 1 -->
+        <article class="min-w-[240px] md:min-w-[300px] max-w-[300px] flex-shrink-0 snap-start group cursor-pointer bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-outline-variant/30 flex flex-col overflow-hidden">
+            <div class="relative aspect-video overflow-hidden">
+                <img alt="Modern Hair Station" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH-13AMoSh9vFQaRT4XvfKAoNbUMjkXYeySHdw2InPKshNXF02FhFdW9sXcA1kCvseiE4zXOaXn0fArVN6UK-2x7FHhCrhS1AxLBcw0orkCkyRr2U-SCoDjEW33b2dpnNoSLqCD-O7n9ER736oGRcYRq0b644eypt5GFven4ToWy88gXn7a283rQYG7IDnmDyY3x3RV9zvZa6bVPNk4IZtFW0kYoWndS7B4r-i8rG9frOsVRIhExBcrw">
+                <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-[12px] font-bold text-on-surface shadow-sm">$85/day</div>
+                <div class="absolute bottom-2 left-2 bg-[#e8f5e9] text-[#1b5e20] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Available Today</div>
+            </div>
+            <div class="p-4 flex flex-col">
+                <h3 class="text-label-md font-label-md text-on-surface line-clamp-1 mb-1">Atelier Market</h3>
+                <p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">location_on</span> Arts District
+                </p>
+            </div>
+        </article>
+        <!-- Card 2 -->
+        <article class="min-w-[240px] md:min-w-[300px] max-w-[300px] flex-shrink-0 snap-start group cursor-pointer bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-outline-variant/30 flex flex-col overflow-hidden">
+            <div class="relative aspect-video overflow-hidden">
+                <img alt="Lumina Collective" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqmmpThWpVFOUezdcXTeAr55Cljzd9so-oEUSrVkVuqaZu4D-7XxLuSFHWjDm31_nT7NoxZgKyPCnG4_x9sa4tVubV526emWAgKYKPwfjRxBdL9olQj_6zw2EC2O7V7bFSmVPv35Tkq6FS_9ARagHyj3WxYvT9zkovVUUjVPZMPB4zT8o0apJFFWlAXtYzqKBil2M8PAhi-HB09LIvDZa3WFBwajHvh5DLJYNmDGv-O3jhO97SL47VAQ">
+                <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-[12px] font-bold text-on-surface shadow-sm">$60/day</div>
+                <div class="absolute bottom-2 left-2 bg-[#e8f5e9] text-[#1b5e20] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Available Today</div>
+            </div>
+            <div class="p-4 flex flex-col">
+                <h3 class="text-label-md font-label-md text-on-surface line-clamp-1 mb-1">Lumina Collective</h3>
+                <p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">location_on</span> Silverlake
+                </p>
+            </div>
+        </article>
+        <!-- Card 3 -->
+        <article class="min-w-[240px] md:min-w-[300px] max-w-[300px] flex-shrink-0 snap-start group cursor-pointer bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-outline-variant/30 flex flex-col overflow-hidden">
+            <div class="relative aspect-video overflow-hidden">
+                <img alt="The Retreat" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmWzGsedo9iyXRHVb86YIrfpGi3IT0_k8G3kgmyyFWd8twwANEq8YEkI8Ell2wKSL8-GsRMKG1y-4VIVefGfz2v81MwLXcbvib7RDA5y5yVHie0eALgwF_VciGUhKr-qr3X1gVD0YxPXwOw6zRU90LjKOXFQziWJvulZZZ5Va25GkmeHSyvmeDUnN9do_Zv-Vf0qqn1807o0YeFq4_ET09zudUNm5OOZKowlz4dfu8C4SaHRCydZHn8w">
+                <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-[12px] font-bold text-on-surface shadow-sm">$110/day</div>
+                <div class="absolute bottom-2 left-2 bg-[#e8f5e9] text-[#1b5e20] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Available Today</div>
+            </div>
+            <div class="p-4 flex flex-col">
+                <h3 class="text-label-md font-label-md text-on-surface line-clamp-1 mb-1">The Retreat</h3>
+                <p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">location_on</span> Beverly Hills
+                </p>
+            </div>
+        </article>
+    </div>
+</section><section class="px-margin-mobile md:px-margin-desktop py-lg max-w-[1440px] mx-auto">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-on-surface mb-2">Featured Workspaces</h2>
+<p class="text-body-md font-body-md text-on-surface-variant">Curated luxury environments for top-tier professionals.</p>
+</div>
+<button class="hidden md:flex items-center gap-1 text-label-md font-label-md text-secondary hover:text-on-secondary-container transition-colors">
+                    View all <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Horizontal Scroll Container -->
+<div class="flex gap-gutter overflow-x-auto hide-scrollbar pb-8 -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 snap-x snap-mandatory">
+<!-- Card 1 -->
+<article class="min-w-[280px] md:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start group cursor-pointer bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_12px_32px_rgba(0,0,0,0.08)] transition-all duration-300 border border-outline-variant/30 flex flex-col overflow-hidden">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Loft Studio space" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A bright, airy loft space converted into a hair salon. Exposed brick walls painted white, large industrial windows, and warm oak wood flooring. Minimalist styling stations with round mirrors. The mood is creative, clean, and highly professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsOKaSKDJv6bI8XJg0bMJv7AxAnmK1MyEL3UUeEke9O81nBMXeXraVKRNR4nxTQWxggnZ5nYIItSEfe8IRDH9ADhsmGiRm8puMXt68DDz7y6GgkGTzK7UtPvQhRnt16lE3ctg4b4TcFGF_ehcTzs_YdPMG0ff5bd5g8xT6c4JoNOImipJOrGhCp9S7iE_5q7PjgTGjLbwfX2rY8rCXAl6ykZPjFnK-KNxk_NOuE-NXmCa5wHzkOJh0HA">
+<!-- Price Badge -->
+<div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-label-sm font-label-sm text-on-surface shadow-sm font-bold">
+                            $85/day
+                        </div>
+<!-- Favorite Button -->
+<button class="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite_border</span>
+</button>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-md font-headline-md text-on-surface line-clamp-1 text-[20px]">Atelier Market</h3>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary">star</span> 4.9
+                            </div>
+</div>
+<p class="text-body-md font-body-md text-on-surface mb-3 line-clamp-1">Modern Hair Station</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
+<span class="material-symbols-outlined text-[16px]">location_on</span> Downtown Arts District
+                        </p>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="min-w-[280px] md:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start group cursor-pointer bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_12px_32px_rgba(0,0,0,0.08)] transition-all duration-300 border border-outline-variant/30 flex flex-col overflow-hidden">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Nail studio workspace" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="An intimate, softly lit nail art studio. Featuring dusty pink and terracotta walls, a sleek marble manicure table, and plush velvet seating. The lighting is warm and inviting, creating a tactile, soft-luxury feel typical of modern boutique salons." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqmmpThWpVFOUezdcXTeAr55Cljzd9so-oEUSrVkVuqaZu4D-7XxLuSFHWjDm31_nT7NoxZgKyPCnG4_x9sa4tVubV526emWAgKYKPwfjRxBdL9olQj_6zw2EC2O7V7bFSmVPv35Tkq6FS_9ARagHyj3WxYvT9zkovVUUjVPZMPB4zT8o0apJFFWlAXtYzqKBil2M8PAhi-HB09LIvDZa3WFBwajHvh5DLJYNmDGv-O3jhO97SL47VAQ">
+<div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-label-sm font-label-sm text-on-surface shadow-sm font-bold">
+                            $60/day
+                        </div>
+<button class="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite_border</span>
+</button>
+<!-- Status Badge -->
+<div class="absolute bottom-3 left-3 bg-[#e8f5e9] text-[#1b5e20] px-3 py-1 rounded-full text-[10px] font-label-sm uppercase tracking-wider font-bold">
+                            Available Today
+                        </div>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-md font-headline-md text-on-surface line-clamp-1 text-[20px]">Lumina Collective</h3>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary">star</span> 5.0
+                            </div>
+</div>
+<p class="text-body-md font-body-md text-on-surface mb-3 line-clamp-1">Private Nail Suite</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
+<span class="material-symbols-outlined text-[16px]">location_on</span> Silverlake
+                        </p>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="min-w-[280px] md:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start group cursor-pointer bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_12px_32px_rgba(0,0,0,0.08)] transition-all duration-300 border border-outline-variant/30 flex flex-col overflow-hidden">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Esthetician room" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A moody, sophisticated private esthetician room. Dark charcoal walls, subtle recessed lighting highlighting a pristine treatment bed. Natural linen textures and dried floral arrangements add a calm, reliable, and premium spa atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmWzGsedo9iyXRHVb86YIrfpGi3IT0_k8G3kgmyyFWd8twwANEq8YEkI8Ell2wKSL8-GsRMKG1y-4VIVefGfz2v81MwLXcbvib7RDA5y5yVHie0eALgwF_VciGUhKr-qr3X1gVD0YxPXwOw6zRU90LjKOXFQziWJvulZZZ5Va25GkmeHSyvmeDUnN9do_Zv-Vf0qqn1807o0YeFq4_ET09zudUNm5OOZKowlz4dfu8C4SaHRCydZHn8w">
+<div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-label-sm font-label-sm text-on-surface shadow-sm font-bold">
+                            $110/day
+                        </div>
+<button class="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite_border</span>
+</button>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-md font-headline-md text-on-surface line-clamp-1 text-[20px]">The Retreat</h3>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary">star</span> 4.8
+                            </div>
+</div>
+<p class="text-body-md font-body-md text-on-surface mb-3 line-clamp-1">Luxury Spa Room</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
+<span class="material-symbols-outlined text-[16px]">location_on</span> Beverly Hills
+                        </p>
+</div>
+</article>
+<!-- Card 4 -->
+<article class="min-w-[280px] md:min-w-[340px] max-w-[340px] flex-shrink-0 snap-start group cursor-pointer bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0px_12px_32px_rgba(0,0,0,0.08)] transition-all duration-300 border border-outline-variant/30 flex flex-col overflow-hidden">
+<div class="relative aspect-[4/3] overflow-hidden">
+<img alt="Barber station" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A spacious, high-end barber station in a boutique men's grooming lounge. Features a vintage-style leather barber chair, rich mahogany wood paneling, brass fixtures, and a clean, editorial architectural layout. Well-lit and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6FaGIuauyhFY7TjW9Q7gjmGBP-sKMfGhm7cy-AqX_ftSZqJROJPdkJHDc3yM4B9inejQNichuw0qV1ybxCxoBHCE3sgcDG7NU1pheaj0QjDYJy-C6RrWGrpU16C_pAebP7UoSAhv4faU6jd3H3P5NQGy79VxJAdn4P-5TvybUJpL_jti-hCV5R47Wad41cNbGWv19DMCnCUoi2dNK5dzrXkFDA8-xEf_iKaUIhLnQmxFRNk3B8vTrRQ">
+<div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-label-sm font-label-sm text-on-surface shadow-sm font-bold">
+                            $75/day
+                        </div>
+<button class="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite_border</span>
+</button>
+</div>
+<div class="p-5 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-md font-headline-md text-on-surface line-clamp-1 text-[20px]">Oak &amp; Iron</h3>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary">star</span> 4.9
+                            </div>
+</div>
+<p class="text-body-md font-body-md text-on-surface mb-3 line-clamp-1">Premium Barber Chair</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1 mt-auto">
+<span class="material-symbols-outlined text-[16px]">location_on</span> Culver City
+                        </p>
+</div>
+</article>
+</div>
+</section>
+</main>
+<script>
+        // Simple script to handle top nav appearance on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('desktop-nav');
+            if (window.scrollY > 20) {
+                nav.classList.add('bg-surface/90', 'backdrop-blur-md', 'shadow-sm');
+                nav.classList.remove('bg-surface');
+            } else {
+                nav.classList.remove('bg-surface/90', 'backdrop-blur-md', 'shadow-sm');
+                nav.classList.add('bg-surface');
+            }
+        });
+    </script>
+
+
+</body></html>

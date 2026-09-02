@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Salons - The Salon Spot</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#858383",
+                      "surface-container-highest": "#e4e2e2",
+                      "surface-container": "#efeded",
+                      "primary-fixed-dim": "#c8c6c5",
+                      "surface-container-high": "#e9e8e7",
+                      "on-secondary-fixed": "#261900",
+                      "surface-bright": "#fbf9f8",
+                      "on-tertiary-container": "#848480",
+                      "on-secondary-container": "#785a1a",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#474744",
+                      "tertiary-container": "#1b1c19",
+                      "on-secondary": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "surface-tint": "#5f5e5e",
+                      "on-surface": "#1b1c1c",
+                      "outline-variant": "#c4c7c7",
+                      "secondary-container": "#fed488",
+                      "surface": "#fbf9f8",
+                      "background": "#fbf9f8",
+                      "error-container": "#ffdad6",
+                      "on-error-container": "#93000a",
+                      "inverse-on-surface": "#f2f0f0",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed-dim": "#c8c6c2",
+                      "primary-fixed": "#e5e2e1",
+                      "tertiary-fixed": "#e4e2dd",
+                      "on-tertiary-fixed": "#1b1c19",
+                      "surface-variant": "#e4e2e2",
+                      "inverse-primary": "#c8c6c5",
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed-variant": "#5d4201",
+                      "surface-container-low": "#f5f3f3",
+                      "secondary-fixed": "#ffdea5",
+                      "outline": "#747878",
+                      "secondary": "#775a19",
+                      "on-primary-fixed-variant": "#474746",
+                      "surface-dim": "#dbdad9",
+                      "on-background": "#1b1c1c",
+                      "tertiary": "#000000",
+                      "inverse-surface": "#303031",
+                      "primary-container": "#1c1b1b",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed-dim": "#e9c176",
+                      "primary": "#000000",
+                      "on-surface-variant": "#444748",
+                      "on-primary-fixed": "#1c1b1b"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "64px",
+                      "sm": "12px",
+                      "xs": "4px",
+                      "base": "8px",
+                      "gutter": "24px",
+                      "md": "24px",
+                      "margin-mobile": "16px",
+                      "xl": "80px",
+                      "lg": "48px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Libre Caslon Text"
+                      ],
+                      "label-md": [
+                              "Manrope"
+                      ],
+                      "label-sm": [
+                              "Manrope"
+                      ],
+                      "headline-lg": [
+                              "Libre Caslon Text"
+                      ],
+                      "headline-lg-mobile": [
+                              "Libre Caslon Text"
+                      ],
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "body-md": [
+                              "Manrope"
+                      ],
+                      "display-lg": [
+                              "Libre Caslon Text"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col md:flex-row">
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-0 h-full z-40 p-md bg-surface-container-low dark:bg-tertiary-container w-[280px]">
+<div class="mb-lg">
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed-dim">The Salon Spot</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant mt-xs">Owner Dashboard</p>
+</div>
+<ul class="flex flex-col gap-sm flex-grow">
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-label-md font-label-md">Overview</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="text-label-md font-label-md">Salons</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="text-label-md font-label-md">Bookings</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+<span class="text-label-md font-label-md">Messages</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant dark:text-surface-variant px-4 py-3 hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="text-label-md font-label-md">Profile</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg text-label-md font-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                Add Workspace
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow md:ml-[280px] p-margin-mobile md:p-margin-desktop pb-[100px] md:pb-margin-desktop w-full max-w-[1440px] mx-auto">
+<header class="flex justify-between items-center mb-lg">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-primary">My Salons</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mt-xs">Manage your properties and workspaces.</p>
+</div>
+<button class="hidden md:flex bg-primary text-on-primary px-6 py-3 rounded-lg text-label-md font-label-md hover:opacity-90 transition-opacity items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                Add Salon
+            </button>
+</header>
+<!-- Salon Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-surface-container hover:shadow-[0px_12px_32px_rgba(0,0,0,0.08)] transition-shadow duration-300 group cursor-pointer">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A brightly lit, modern luxury salon interior with minimalist white stations, large circular mirrors, and subtle bronze accents. Soft, natural light streams in through large windows, creating a clean, professional aesthetic. High-end editorial photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbW5wvwxGi63w3sRcUwqysENCUnMRkyK350DNDpuRLqe2GlWNTdQTaVILS7sq66q7w41tgxi4WuJsiTcgzUkwkpHMsr4HxRZx7NT107Bm6jqgKfwD0fJsVjBsV-_A1Rm_FPsFXBKxvxU13Df81v2Jo8F7O20wyPXmkHIWiB_r20V-Ri86eLfRhpMtCkerHUAqE1Q7NvN2mkGs2JWG3nK_6yXTSVdr-ZpbAC2gdrgDpIIVjAV_JXPE-_Q"/>
+<div class="absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-[#34A853]"></span>
+<span class="text-label-sm font-label-sm text-on-surface">Published</span>
+</div>
+</div>
+<div class="p-md">
+<h3 class="text-headline-md font-headline-md text-primary mb-xs">Aura Studio Space</h3>
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1 mb-md">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                        West End, Downtown
+                    </p>
+<div class="flex justify-between items-center border-t border-surface-container-high pt-sm">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="chair">chair</span>
+<span class="text-label-sm font-label-sm">4 Workspaces</span>
+</div>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-surface-container hover:shadow-[0px_12px_32px_rgba(0,0,0,0.08)] transition-shadow duration-300 group cursor-pointer">
+<div class="relative h-48 w-full overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="An empty, high-end loft space intended for a salon. Exposed brick walls painted matte white, polished concrete floors, and large industrial windows. The space feels open, airy, and ready for customization. Soft, diffused daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDn5qc8shgHogp23eVYQehRRwFbotBky1r7qYQJOGMrFTPX86GtOx2Cm0vpEiZZ7_MiDR2S_SViaHKVUG5OO1WqVfemlF8FPZpTTztQbcbw8ylZcPax-ZQoqvGWvApyZQRKt21zfg66o6tn0pbZ38QNNYeZvNSBPWu2QRjrx0dUzTvCda3j6fWZo_SiCTgq9ETgnz5U0Agq0cMokPRKPx2y_wXlmpHuJ1XiWwFUuescPR4v1BpxR1MIA"/>
+<div class="absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="text-label-sm font-label-sm text-on-surface">Draft</span>
+</div>
+</div>
+<div class="p-md">
+<h3 class="text-headline-md font-headline-md text-primary mb-xs">The Loft Collection</h3>
+<p class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1 mb-md">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                        Arts District
+                    </p>
+<div class="flex justify-between items-center border-t border-surface-container-high pt-sm">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="chair">chair</span>
+<span class="text-label-sm font-label-sm">0 Workspaces</span>
+</div>
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full h-16 z-50 flex justify-around items-center px-margin-mobile pb-safe md:hidden bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-t border-outline-variant dark:border-outline rounded-t-xl shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:bg-surface-container dark:hover:bg-inverse-surface rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-sm font-label-sm mt-1">Overview</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-2xl p-2 scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="text-label-sm font-label-sm mt-1">Salons</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:bg-surface-container dark:hover:bg-inverse-surface rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+<span class="text-label-sm font-label-sm mt-1">Bookings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:bg-surface-container dark:hover:bg-inverse-surface rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="text-label-sm font-label-sm mt-1">Profile</span>
+</a>
+</nav>
+<!-- Mobile FAB for Add Salon -->
+<button class="md:hidden fixed bottom-[88px] right-margin-mobile w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[28px]" data-icon="add">add</span>
+</button>
+</body></html>
