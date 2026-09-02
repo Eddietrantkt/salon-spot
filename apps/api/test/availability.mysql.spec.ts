@@ -1,4 +1,4 @@
-import { AvailabilitySlotStatus, MembershipRole, ProfessionalProfileStatus, WorkspaceStatus } from '@prisma/client';
+import { AvailabilitySlotStatus, MediaStatus, MembershipRole, OutboxStatus, ProfessionalProfileStatus, WorkspaceStatus } from '@prisma/client';
 import { FIXED_SLOT_PERIODS } from '@salon-spot/contracts';
 import { PrismaService } from '../src/common/database/prisma/prisma.service.js';
 import { OwnerAvailabilityService } from '../src/modules/availability/application/owner-availability.service.js';
@@ -7,6 +7,9 @@ import { AvailabilitySlotLockService } from '../src/modules/availability/applica
 import { SlotHoldsService } from '../src/modules/availability/application/slot-holds.service.js';
 import { BookingsService } from '../src/modules/bookings/application/bookings.service.js';
 import { ProfessionalAccessService } from '../src/modules/professionals/application/professional-access.service.js';
+import { BookingNotificationOutboxService } from '../src/modules/bookings/application/booking-notification-outbox.service.js';
+import { MediaCleanupService } from '../src/modules/media/application/media-cleanup.service.js';
+import { OwnerMediaService } from '../src/modules/media/application/owner-media.service.js';
 
 const describeMySql = process.env.RUN_MYSQL_E2E === '1' ? describe : describe.skip;
 
@@ -52,10 +55,17 @@ describeMySql('OwnerAvailabilityService MySQL concurrency', () => {
   });
 
   afterAll(async () => {
+    const bookingIds = (await prisma.booking.findMany({ where: { slot: { workspaceId } }, select: { id: true } })).map((booking) => booking.id);
+    const relatedOutboxIds = (await prisma.outboxEvent.findMany()).filter((event) => {
+      const payload = JSON.stringify(event.payload);
+      return payload.includes(suffix) || bookingIds.some((bookingId) => payload.includes(bookingId));
+    }).map((event) => event.id);
+    if (relatedOutboxIds.length > 0) await prisma.outboxEvent.deleteMany({ where: { id: { in: relatedOutboxIds } } });
     await prisma.idempotencyRecord.deleteMany({ where: { actorUserId: { in: [userId, professionalAId, professionalBId] } } });
     await prisma.auditEvent.deleteMany({ where: { entityId: workspaceId } });
     await prisma.booking.deleteMany({ where: { slot: { workspaceId } } });
     await prisma.slotHold.deleteMany({ where: { slot: { workspaceId } } });
+    await prisma.workspace.update({ where: { id: workspaceId }, data: { coverMediaId: null } });
     await prisma.availabilitySlot.deleteMany({ where: { workspaceId } });
     await prisma.workspaceCalendarLock.deleteMany({ where: { workspaceId } });
     await prisma.workspace.deleteMany({ where: { id: workspaceId } });
@@ -165,5 +175,82 @@ describeMySql('OwnerAvailabilityService MySQL concurrency', () => {
     expect(holdCount).toBe(0);
     expect([AvailabilitySlotStatus.OPEN, AvailabilitySlotStatus.BOOKED]).toContain(savedSlot.status);
     expect(bookingCount).toBe(savedSlot.status === AvailabilitySlotStatus.BOOKED ? 1 : 0);
+  }, 30_000);
+
+  it('returns one canonical booking when the same hold is confirmed concurrently', async () => {
+    const ownerAvailability = new OwnerAvailabilityService(prisma);
+    const locks = new AvailabilitySlotLockService();
+    const professionals = new ProfessionalAccessService(prisma);
+    const holds = new SlotHoldsService(prisma, new AvailabilityConfigService({ get: () => '600' } as never), locks, professionals);
+    const bookings = new BookingsService(prisma, locks, professionals);
+    const localDate = '2099-12-20';
+    await ownerAvailability.openFixedSlots(salonId, workspaceId, userId, { localDate, periods: ['09:00-11:00'] }, `confirm-race-open-${suffix}`);
+    const slot = await prisma.availabilitySlot.findFirstOrThrow({ where: { workspaceId, localDate: new Date(`${localDate}T00:00:00.000Z`) } });
+    const held = await holds.create(professionalAId, slot.id, `confirm-race-hold-${suffix}`);
+    const results = await Promise.all([bookings.confirm(professionalAId, held.hold.id, `confirm-race-${suffix}`), bookings.confirm(professionalAId, held.hold.id, `confirm-race-${suffix}`)]);
+    expect(new Set(results.map((result) => result.booking.id))).toEqual(new Set([results[0]!.booking.id]));
+    await expect(prisma.booking.count({ where: { availabilitySlotId: slot.id } })).resolves.toBe(1);
+    await expect(prisma.slotHold.count({ where: { availabilitySlotId: slot.id } })).resolves.toBe(0);
+    await expect(prisma.availabilitySlot.findUniqueOrThrow({ where: { id: slot.id } })).resolves.toMatchObject({ status: AvailabilitySlotStatus.BOOKED });
+    await expect(prisma.auditEvent.count({ where: { entityType: 'Booking', entityId: results[0]!.booking.id, action: 'BOOKING_CONFIRMED' } })).resolves.toBe(1);
+    const events = await prisma.outboxEvent.findMany({ where: { topic: 'BOOKING_CONFIRMED' } });
+    expect(events.filter((event) => (event.payload as { bookingId?: string }).bookingId === results[0]!.booking.id)).toHaveLength(1);
+  }, 30_000);
+
+  it('returns one canonical cancellation without duplicate audit or outbox records', async () => {
+    const ownerAvailability = new OwnerAvailabilityService(prisma);
+    const locks = new AvailabilitySlotLockService();
+    const professionals = new ProfessionalAccessService(prisma);
+    const holds = new SlotHoldsService(prisma, new AvailabilityConfigService({ get: () => '600' } as never), locks, professionals);
+    const bookings = new BookingsService(prisma, locks, professionals);
+    const localDate = '2099-12-21';
+    await ownerAvailability.openFixedSlots(salonId, workspaceId, userId, { localDate, periods: ['09:00-11:00'] }, `cancel-race-open-${suffix}`);
+    const slot = await prisma.availabilitySlot.findFirstOrThrow({ where: { workspaceId, localDate: new Date(`${localDate}T00:00:00.000Z`) } });
+    const held = await holds.create(professionalAId, slot.id, `cancel-race-hold-${suffix}`);
+    const confirmed = await bookings.confirm(professionalAId, held.hold.id, `cancel-race-confirm-${suffix}`);
+    const results = await Promise.all([bookings.cancel(professionalAId, confirmed.booking.id, `cancel-race-${suffix}`), bookings.cancel(professionalAId, confirmed.booking.id, `cancel-race-${suffix}`)]);
+    expect(new Set(results.map((result) => result.booking.id))).toEqual(new Set([confirmed.booking.id]));
+    await expect(prisma.booking.findUniqueOrThrow({ where: { id: confirmed.booking.id } })).resolves.toMatchObject({ status: 'CANCELLED' });
+    await expect(prisma.availabilitySlot.findUniqueOrThrow({ where: { id: slot.id } })).resolves.toMatchObject({ status: AvailabilitySlotStatus.OPEN });
+    await expect(prisma.auditEvent.count({ where: { entityType: 'Booking', entityId: confirmed.booking.id, action: 'BOOKING_CANCELLED' } })).resolves.toBe(1);
+    const events = await prisma.outboxEvent.findMany({ where: { topic: 'BOOKING_CANCELLED' } });
+    expect(events.filter((event) => (event.payload as { bookingId?: string }).bookingId === confirmed.booking.id)).toHaveLength(1);
+  }, 30_000);
+
+  it('reclaims one expired outbox lease after a simulated worker restart', async () => {
+    const event = await prisma.outboxEvent.create({ data: { topic: 'BOOKING_CONFIRMED', payload: { bookingId: `lease-${suffix}` }, status: OutboxStatus.PROCESSING, attempts: 1, availableAt: new Date(Date.now() - 1_000) } });
+    await expect(new BookingNotificationOutboxService(prisma).processBatch()).resolves.toBeGreaterThanOrEqual(1);
+    await expect(prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } })).resolves.toMatchObject({ status: OutboxStatus.DELIVERED, attempts: 2 });
+  }, 30_000);
+
+  it('serializes concurrent media upload intents at the active-media cap', async () => {
+    let sequence = 0;
+    const storage = {
+      createUpload: () => ({ storageKey: `staging/salons/${salonId}/cap-${suffix}-${sequence++}.png`, url: 'http://upload.invalid', expiresAt: new Date(Date.now() + 60_000) })
+    };
+    const media = new OwnerMediaService(prisma, storage as never, { publicBaseUrl: 'http://localhost/api/v1', maxUploadBytes: 10_000_000 } as never);
+    const attempts = await Promise.allSettled(Array.from({ length: 12 }, () => media.createSalonUploadIntent(salonId, userId, { contentType: 'image/png' } )));
+    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(10);
+    await expect(prisma.salonMedia.count({ where: { salonId, status: { in: [MediaStatus.PENDING_UPLOAD, MediaStatus.PROCESSING, MediaStatus.READY, MediaStatus.DELETE_PENDING] } } })).resolves.toBe(10);
+  }, 30_000);
+
+  it('marks delete pending media DELETED only after cleanup succeeds and preserves another cover', async () => {
+    const coverId = `cover-${suffix}`;
+    const targetId = `cleanup-${suffix}`;
+    await prisma.workspaceMedia.createMany({ data: [
+      { id: coverId, workspaceId, storageKey: `ready/workspaces/${workspaceId}/cover-${suffix}.png`, contentType: 'image/png', status: MediaStatus.READY, sortOrder: 0 },
+      { id: targetId, workspaceId, storageKey: `ready/workspaces/${workspaceId}/target-${suffix}.png`, contentType: 'image/png', status: MediaStatus.DELETE_PENDING, sortOrder: 1 }
+    ] });
+    await prisma.workspace.update({ where: { id: workspaceId }, data: { coverMediaId: coverId } });
+    const event = await prisma.outboxEvent.create({ data: { topic: 'MEDIA_DELETE_REQUESTED', payload: { kind: 'workspace', mediaId: targetId, storageKey: `ready/workspaces/${workspaceId}/target-${suffix}.png` } } });
+    let deletes = 0;
+    const storage = { delete: async () => { deletes += 1; if (deletes === 1) throw new Error('transient storage failure'); } };
+    const cleanup = new MediaCleanupService(prisma, storage as never);
+    await expect(cleanup.processBatch()).resolves.toBe(0);
+    await expect(prisma.workspaceMedia.findUniqueOrThrow({ where: { id: targetId } })).resolves.toMatchObject({ status: MediaStatus.DELETE_PENDING });
+    await prisma.outboxEvent.update({ where: { id: event.id }, data: { availableAt: new Date(Date.now() - 1_000) } });
+    await expect(cleanup.processBatch()).resolves.toBe(1);
+    await expect(prisma.workspaceMedia.findUniqueOrThrow({ where: { id: targetId } })).resolves.toMatchObject({ status: MediaStatus.DELETED });
+    await expect(prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId } })).resolves.toMatchObject({ coverMediaId: coverId });
   }, 30_000);
 });

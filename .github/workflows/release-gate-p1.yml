@@ -1,0 +1,125 @@
+name: Release gate P1
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-assurance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      DATABASE_URL: mysql://salon_spot:salon_spot@127.0.0.1:3307/salon_spot
+      JWT_ACCESS_SECRET: ci-only-jwt-secret-must-be-at-least-thirty-two-characters
+      REFRESH_TOKEN_PEPPER: ci-only-refresh-pepper-must-be-at-least-thirty-two-characters
+      MEDIA_UPLOAD_SECRET: ci-only-media-secret-must-be-at-least-thirty-two-characters
+      MEDIA_STORAGE_ROOT: .data/ci-media
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: salon_spot
+          MYSQL_USER: salon_spot
+          MYSQL_PASSWORD: salon_spot
+          MYSQL_ROOT_PASSWORD: ci_root_only
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -pci_root_only"
+          --health-interval=5s --health-timeout=3s --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: API and web tests
+        run: pnpm test
+      - name: Production build
+        run: pnpm build
+      - name: Prisma deploy and mandatory MySQL E2E
+        run: pnpm p1:mysql
+      - name: Write disposable runtime environment
+        run: |
+          cat > .env.runtime.ci <<'EOF'
+          MYSQL_DATABASE=salon_spot
+          MYSQL_USER=salon_spot
+          MYSQL_PASSWORD=salon_spot
+          MYSQL_ROOT_PASSWORD=ci_runtime_root_only
+          MYSQL_HOST_PORT=3312
+          WEB_HOST_PORT=8088
+          DATABASE_URL=mysql://salon_spot:salon_spot@mysql:3306/salon_spot
+          PORT=3000
+          WORKER_PORT=3001
+          WEB_ORIGIN=http://localhost:8088
+          NODE_ENV=production
+          JWT_ACCESS_SECRET=ci-only-jwt-secret-must-be-at-least-thirty-two-characters
+          REFRESH_TOKEN_PEPPER=ci-only-refresh-pepper-must-be-at-least-thirty-two-characters
+          ACCESS_TOKEN_TTL_SECONDS=900
+          REFRESH_TOKEN_TTL_DAYS=14
+          MEDIA_UPLOAD_SECRET=ci-only-media-secret-must-be-at-least-thirty-two-characters
+          MEDIA_PUBLIC_BASE_URL=http://localhost:8088/api/v1
+          MEDIA_STORAGE_ROOT=/data/media
+          MEDIA_UPLOAD_TTL_SECONDS=900
+          MEDIA_MAX_UPLOAD_BYTES=10000000
+          MEDIA_MAX_PIXEL_COUNT=40000000
+          SLOT_HOLD_TTL_SECONDS=600
+          HEALTH_DB_TIMEOUT_MS=3000
+          WORKER_TICK_INTERVAL_SECONDS=1
+          WORKER_STARTUP_GRACE_SECONDS=1
+          WORKER_STALE_AFTER_SECONDS=30
+          WORKER_WATCHDOG_INTERVAL_SECONDS=1
+          WORKER_SHUTDOWN_GRACE_SECONDS=20
+          EOF
+      - name: P0 runtime smoke
+        env:
+          RUNTIME_ENV_FILE: .env.runtime.ci
+          RUNTIME_BASE_URL: http://127.0.0.1:8088
+        run: pnpm p1:runtime-smoke
+      - name: Seed isolated browser fixture
+        run: docker compose --env-file .env.runtime.ci -f compose.runtime.yaml exec -T api node apps/api/dist/scripts/seed-demo.js
+      - name: Browser release journeys
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8088
+        run: pnpm p1:browser
+      - name: Backup and restore rehearsal
+        run: pnpm p1:backup-restore
+      - name: Save release diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts/ci
+          docker compose --env-file .env.runtime.ci -f compose.runtime.yaml ps > artifacts/ci/runtime-ps.txt || true
+          docker compose --env-file .env.runtime.ci -f compose.runtime.yaml logs --no-color > artifacts/ci/runtime.log || true
+          docker compose -f compose.p1-backup.yaml ps > artifacts/ci/backup-restore-ps.txt || true
+          docker compose -f compose.p1-backup.yaml logs --no-color > artifacts/ci/backup-restore.log || true
+      - name: Upload release diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-release-evidence-${{ github.run_id }}
+          if-no-files-found: warn
+          path: |
+            artifacts/
+            test-results/
+            playwright-report/
+      - name: Dispose runtime and rehearsal databases
+        if: always()
+        run: |
+          docker compose --env-file .env.runtime.ci -f compose.runtime.yaml down --volumes --remove-orphans || true
+          docker compose -f compose.p1-backup.yaml down --volumes --remove-orphans || true

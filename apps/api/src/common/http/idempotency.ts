@@ -22,29 +22,37 @@ export async function executeIdempotently<T extends object>(
   const replay = await findReplay<T>(prisma, actorUserId, scope, idempotencyKey, requestHash);
   if (replay) return replay;
 
-  try {
-    return await prisma.$transaction(async (tx) => {
-      const inTransactionReplay = await findReplay<T>(tx, actorUserId, scope, idempotencyKey, requestHash);
-      if (inTransactionReplay) return inTransactionReplay;
-      const response = await operation(tx);
-      await tx.idempotencyRecord.create({
-        data: {
-          actorUserId,
-          scope,
-          idempotencyKey,
-          requestHash,
-          statusCode: 201,
-          responseBody: response as Prisma.InputJsonObject
-        }
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const inTransactionReplay = await findReplay<T>(tx, actorUserId, scope, idempotencyKey, requestHash);
+        if (inTransactionReplay) return inTransactionReplay;
+        const response = await operation(tx);
+        await tx.idempotencyRecord.create({
+          data: {
+            actorUserId,
+            scope,
+            idempotencyKey,
+            requestHash,
+            statusCode: 201,
+            responseBody: response as Prisma.InputJsonObject
+          }
+        });
+        return response;
       });
-      return response;
-    });
-  } catch (error) {
-    if (!isUniqueIdempotencyViolation(error)) throw error;
-    const concurrentReplay = await findReplay<T>(prisma, actorUserId, scope, idempotencyKey, requestHash);
-    if (concurrentReplay) return concurrentReplay;
-    throw error;
+    } catch (error) {
+      // A competing request can finish after this transaction's initial replay read
+      // but before a lifecycle state check. Re-read before surfacing that conflict.
+      const concurrentReplay = await findReplay<T>(prisma, actorUserId, scope, idempotencyKey, requestHash);
+      if (concurrentReplay) return concurrentReplay;
+      if (isRetryableTransactionConflict(error) && attempt < 2) {
+        await delay((attempt + 1) * 20);
+        continue;
+      }
+      throw error;
+    }
   }
+  throw new Error('Idempotency transaction retry limit was unexpectedly exhausted.');
 }
 
 async function findReplay<T extends object>(
@@ -65,6 +73,13 @@ async function findReplay<T extends object>(
   return record.responseBody as T;
 }
 
-function isUniqueIdempotencyViolation(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+/** MySQL may abort one contender rather than queue it; retrying is safe because this helper owns the idempotency record. */
+function isRetryableTransactionConflict(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
+  if (error.code === 'P2034') return true;
+  return error.code === 'P2010' && error.meta?.code === '1213';
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }

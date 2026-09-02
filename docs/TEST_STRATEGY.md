@@ -63,3 +63,11 @@ Local MySQL E2E previously verified refresh-cookie rotation, logout revocation, 
 Before MVP go/no-go, verify browser refresh/direct-link/back for every route, Owner/Admin mobile navigation at 320/375/768px, multiple Salon/viewer timezone combinations, a non-Professional role matrix, concurrent confirm/cancel, and D3-D4 media cap/cleanup recovery on MySQL.
 
 Before enabling verification-based booking eligibility, add workflow tests for submit/review/resubmit/revoke, short-lived private download authorization, license validity through the target slot end, confirm-time recheck, and legacy-profile backfill. Password reset additionally needs non-enumerating request responses, one-time/expiry/replay tests, session revocation policy and real email-delivery evidence.
+
+## P1 release-assurance execution
+
+`RUN_MYSQL_E2E` is no longer optional in the release workflow. Run `pnpm p1:mysql` only with a disposable `DATABASE_URL`; it applies real migrations before the MySQL test paths. The suite asserts direct database state for open/block, competing holds, replay/cross-user denial, expiry/confirm, concurrent same-hold confirm, concurrent cancel, expired outbox-lease reclaim, media active-cap and cleanup retry. `p1-http-bola.mysql.spec.ts` boots the real Nest HTTP application against MySQL and verifies cross-Salon owner/Admin/Professional denial, PENDING-versus-ACTIVE hold access and suspension/refresh revocation.
+
+Chromium Playwright runs through the packaged same-origin runtime with traces, video and screenshots retained on failure. Its checked-in flows cover deep links, refresh/back, role-specific login boundaries and 320/375/768 navigation. It does not replace the manual two-Salon/two-browser-timezone and mutation UAT record; attach request IDs and direct database results to `P1_TEST_EVIDENCE.md`.
+
+Backup/restore uses `compose.p1-backup.yaml`, never a developer/UAT database. The report carries only synthetic data and must be attached to the candidate evidence bundle.

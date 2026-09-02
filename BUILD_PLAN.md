@@ -13,7 +13,7 @@ Hoàn thành một vertical slice staging/UAT: Owner publish Workspace có ảnh
 5. **D6-D7 - booking (đã xây dựng):** Professional xem chi tiết slot, hold 10 phút qua cấu hình, expiry/idempotency, confirm atomically, immutable snapshot gồm giá/tên/UTC instant/Salon timezone/local date và UI booking.
 6. **D8 - lifecycle (đã xây dựng):** cancellation (>10h reopen), completion worker, Outbox/audit và log-sink notification retry độc lập.
 7. **D9 - operations admin (đã xây dựng):** Admin là tài khoản vận hành độc lập qua `AdminAccess`, không phải Owner. Dashboard đọc sức khỏe dữ liệu/vận hành, heartbeat worker, audit và outbox; mutation đầu tiên chỉ khóa/mở tài khoản với reason, idempotency, revoke session và audit.
-8. **D9-D10 - hardening/UAT (đang tiếp tục):** MySQL race còn thiếu, browser UAT route/deep-link/back, responsive mobile navigation, backup/restore rehearsal, P0 defect-only and signed go/no-go.
+8. **P1 - release assurance (đã có release-gate source, cần chạy evidence trên CI):** Git baseline `pre-p1-baseline`, GitHub Actions clean-checkout pipeline, MySQL 8.4 integrity/BOLA suites bắt buộc, Chromium browser smoke, Compose runtime smoke và rehearsal backup/restore hai MySQL tách biệt. Chỉ khi `docs/P1_TEST_EVIDENCE.md` được điền bằng artifact của candidate SHA mới được ký GO/NO-GO.
 9. **Professional trust follow-up (foundation DB đã thêm, workflow còn lại):** profile onboarding, private upload/finalize, manual Admin review, password-reset request/confirm và email delivery; chỉ sau backfill/UAT mới dùng verification/credential expiry để chặn hold/confirm mới.
 
 ## Hợp đồng triển khai trước khi viết feature
@@ -47,3 +47,11 @@ Hoàn thành một vertical slice staging/UAT: Owner publish Workspace có ảnh
 - Request ID được middleware gán trước guard và CORS expose `x-request-id`; Sharp/storage errors được log nội bộ và trả message an toàn.
 - Schema additive đã tách verification case, credential và private document; password reset gắn với `User` nên không phụ thuộc Owner/Professional role. Booking guard chưa đổi để tránh regression tài khoản cũ.
 - Chưa xác nhận: browser UAT authenticated đầy đủ; race media cap/cleanup; concurrent confirm/cancel; email provider retry.
+
+## P1 release gate
+
+- Chạy MySQL disposable bắt buộc: `pnpm p1:mysql` (script tự generate Prisma, `migrate deploy` và đặt `RUN_MYSQL_E2E=1`).
+- Chạy P0 Compose smoke: `pnpm p1:runtime-smoke` sau khi chuẩn bị một `RUNTIME_ENV_FILE` không chứa secret production.
+- Chạy rehearsal backup/restore: `pnpm prisma:generate; pnpm build; pnpm p1:backup-restore`.
+- Browser Chromium dùng `pnpm p1:browser`; các case có đột biến quyền/session/timezone vẫn cần fixture và record request ID/DB result trong `docs/P1_TEST_EVIDENCE.md`.
+- CI hiện được cung cấp theo GitHub Actions tại `.github/workflows/release-gate-p1.yml`; Git host/secrets production phải được chủ dự án xác nhận trước release thật.

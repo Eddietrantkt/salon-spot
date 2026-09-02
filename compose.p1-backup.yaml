@@ -1,0 +1,29 @@
+services:
+  source:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: p1_source
+      MYSQL_USER: p1_user
+      MYSQL_PASSWORD: p1_password_only_for_disposable_rehearsal
+      MYSQL_ROOT_PASSWORD: p1_root_only_for_disposable_rehearsal
+    ports:
+      - "3310:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pp1_root_only_for_disposable_rehearsal"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  restore:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: p1_restore
+      MYSQL_USER: p1_user
+      MYSQL_PASSWORD: p1_password_only_for_disposable_rehearsal
+      MYSQL_ROOT_PASSWORD: p1_root_only_for_disposable_rehearsal
+    ports:
+      - "3311:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pp1_root_only_for_disposable_rehearsal"]
+      interval: 3s
+      timeout: 3s
+      retries: 30

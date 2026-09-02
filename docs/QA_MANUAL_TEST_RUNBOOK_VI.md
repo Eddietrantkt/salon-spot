@@ -89,3 +89,15 @@ pnpm --filter @salon-spot/web build
 ```
 
 Nếu lỗi chỉ xuất hiện khi chạy Docker, đính kèm `docker compose ps`, log API liên quan và `requestId`; tuyệt đối loại bỏ cookie, bearer token, mật khẩu và chuỗi kết nối khỏi báo cáo.
+
+## 6. Gate P1 bắt buộc trước GO/NO-GO
+
+Ngoài các case ở trên, chạy và ghi từng dòng vào `docs/P1_TEST_EVIDENCE.md`:
+
+1. **P1-UAT-01 BOLA mutation:** Owner A thử sửa Salon/Workspace Owner B; lặp lại URL/request bằng Admin và Professional. Chụp response `403`, request ID và đếm DB trước/sau để chứng minh không có mutation.
+2. **P1-UAT-02 capability:** tạo Professional `PENDING`, thử hold/confirm; chỉ sau khi chuyển profile thành `ACTIVE` trong fixture kiểm thử mới thử lại. Không dùng Admin/Owner để thay cho capability Professional.
+3. **P1-UAT-03 session revocation:** Admin suspend user disposable có access và refresh session; access cũ và refresh cũ đều phải fail. Reactivate chỉ cho login mới, không hồi sinh refresh token cũ.
+4. **P1-UAT-04 timezone:** dùng hai Salon timezone và hai browser timezone, kiểm tra My Bookings luôn dùng `salonTimezone`/`localDate` snapshot, không dùng timezone máy test.
+5. **P1-UAT-05 mobile:** chụp navigation role-specific ở 320, 375, 768 px và mở trực tiếp/refresh/back cho Discovery, detail, bookings, Owner, Admin, onboarding.
+
+Sau đó chạy `pnpm p1:mysql`, `pnpm p1:runtime-smoke`, `pnpm p1:browser` và `pnpm p1:backup-restore` với môi trường disposable. Không ký GO nếu một evidence còn `PENDING`, `FAIL` hoặc `BLOCKED`.

@@ -2,6 +2,10 @@ node_modules/
 dist/
 .env
 .env.runtime
+.env.runtime.*
 .tmp_doc_review/
 coverage/
 .data/
+artifacts/
+test-results/
+playwright-report/
