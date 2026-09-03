@@ -9,6 +9,7 @@
 | Password adapter | Correct password succeeds; different password fails | Unit |
 | Access token | Valid HS256 token succeeds; tampered token and malformed bearer header fail | Unit |
 | Professional access | Missing/suspended profile is denied; `ACTIVE` profile is required by hold and Booking guards/services | Unit + HTTP contract |
+| Professional onboarding | Professional registration creates `PENDING`; authenticated `GET/PATCH /professionals/me` cannot mutate eligibility or verification | Unit + HTTP contract |
 | Professional identity DB | Owner and Professional can both own User-scoped reset-token rows; credential validity and private evidence persist separately; mismatched case/Profile evidence is rejected by FK | Opt-in MySQL integration |
 | Auth lifecycle | Registration normalization/audit, duplicate registration, failed login, refresh rotation, refresh reuse and concurrent claim failure | Unit |
 | BOLA | `SalonMembership` ownership and `:salonId` authorization guard | Unit |

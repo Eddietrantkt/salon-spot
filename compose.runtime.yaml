@@ -1,3 +1,5 @@
+name: salon-spot-runtime
+
 services:
   mysql:
     image: mysql:8.4
@@ -18,9 +20,10 @@ services:
   migrate:
     build:
       context: .
-      target: api-runtime
+      target: migration-runtime
     env_file: ${RUNTIME_ENV_FILE:-.env.runtime}
-    command: ["sh", "-c", "node_modules/.bin/prisma migrate deploy --schema apps/api/prisma/schema.prisma"]
+    working_dir: /app/apps/api
+    command: ["sh", "-ec", "test -x ./node_modules/.bin/prisma && ./node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma"]
     depends_on:
       mysql:
         condition: service_healthy

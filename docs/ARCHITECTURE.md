@@ -39,7 +39,7 @@ packages/
 
 Professional trust được model riêng theo ba khái niệm: `ProfessionalVerificationCase` là một vòng submit/review; `ProfessionalCredential` là license/insurance có kỳ hạn; `ProfessionalDocument` là metadata bằng chứng riêng tư. File bytes không nằm trong MySQL và không dùng public listing media. `PasswordResetToken` thuộc `User` để mọi role dùng chung recovery. Đây là schema foundation additive; guard booking hiện chưa dựa vào verification để tránh khóa tài khoản cũ trước khi có onboarding/backfill.
 
-Trong local/UAT, operations cấp hoặc kích hoạt capability này qua `professional:grant` sau khi tài khoản đã đăng ký; thao tác upsert profile `ACTIVE` và ghi `AuditEvent`. Chưa có public onboarding/approval endpoint, nên không được tự suy diễn quyền Professional từ email, Owner hay Admin.
+Register intent `PROFESSIONAL` tạo profile `PENDING`; `GET/PATCH /professionals/me` cho phép chính user hoàn thiện thông tin cơ bản nhưng không được đặt status/verification. Trong local/UAT, operations cấp hoặc kích hoạt capability này qua `professional:grant`; thao tác upsert profile `ACTIVE` và ghi `AuditEvent`. Chưa có private-document hay approval/review endpoint, nên không được tự suy diễn quyền Professional từ email, Owner hay Admin.
 
 ## Database ownership
 

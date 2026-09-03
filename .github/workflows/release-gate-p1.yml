@@ -87,13 +87,14 @@ jobs:
           WORKER_WATCHDOG_INTERVAL_SECONDS=1
           WORKER_SHUTDOWN_GRACE_SECONDS=20
           EOF
-      - name: P0 runtime smoke
+      - name: P0 runtime recovery smoke
         env:
-          RUNTIME_ENV_FILE: .env.runtime.ci
-          RUNTIME_BASE_URL: http://127.0.0.1:8088
+          P1_RUNTIME_ENV_FILE: .env.runtime.ci
         run: pnpm p1:runtime-smoke
+      - name: Start isolated browser runtime
+        run: docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml up --build -d
       - name: Seed isolated browser fixture
-        run: docker compose --env-file .env.runtime.ci -f compose.runtime.yaml exec -T api node apps/api/dist/scripts/seed-demo.js
+        run: docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml exec -T api node apps/api/dist/scripts/seed-demo.js
       - name: Browser release journeys
         env:
           E2E_BASE_URL: http://127.0.0.1:8088
@@ -104,10 +105,11 @@ jobs:
         if: always()
         run: |
           mkdir -p artifacts/ci
-          docker compose --env-file .env.runtime.ci -f compose.runtime.yaml ps > artifacts/ci/runtime-ps.txt || true
-          docker compose --env-file .env.runtime.ci -f compose.runtime.yaml logs --no-color > artifacts/ci/runtime.log || true
-          docker compose -f compose.p1-backup.yaml ps > artifacts/ci/backup-restore-ps.txt || true
-          docker compose -f compose.p1-backup.yaml logs --no-color > artifacts/ci/backup-restore.log || true
+          docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml ps > artifacts/ci/browser-runtime-ps.txt || true
+          docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml logs --no-color > artifacts/ci/browser-runtime.log || true
+          docker compose --project-name salon-spot-p1-backup -f compose.p1-backup.yaml ps > artifacts/ci/backup-restore-ps.txt || true
+          docker compose --project-name salon-spot-p1-backup -f compose.p1-backup.yaml logs --no-color > artifacts/ci/backup-restore.log || true
+          docker image inspect salon-spot-p1-browser-api --format '{{.Id}}' > artifacts/ci/runtime-image-id.txt || true
       - name: Upload release diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -121,5 +123,5 @@ jobs:
       - name: Dispose runtime and rehearsal databases
         if: always()
         run: |
-          docker compose --env-file .env.runtime.ci -f compose.runtime.yaml down --volumes --remove-orphans || true
-          docker compose -f compose.p1-backup.yaml down --volumes --remove-orphans || true
+          docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml down --volumes || true
+          docker compose --project-name salon-spot-p1-backup -f compose.p1-backup.yaml down --volumes || true

@@ -4,8 +4,8 @@ P1 is a release gate. It does not add payment, a real notification provider, ful
 
 ## Authority and baseline
 
-- The source baseline is Git tag `pre-p1-baseline`; every release decision records the candidate commit SHA and container image digest.
-- The committed implementation uses GitHub Actions (`.github/workflows/release-gate-p1.yml`). This is an explicit operational assumption until the project selects a different Git host. A migration to GitLab or another provider must preserve every named gate and artifact below.
+- This checkout currently has no configured Git remote. Until a Git host, candidate SHA and artifact URL exist, the committed GitHub Actions workflow is release-gate source only, not CI evidence and never grounds a GO decision.
+- Once a Git host is selected, every release decision records the candidate SHA and image ID/digest. The workflow (`.github/workflows/release-gate-p1.yml`) must preserve every named gate and artifact below on any Git provider.
 - Production secrets belong only in the chosen Git host/environment secret store and the deployment secret store. `.env`, `.env.runtime`, cookies, access tokens, refresh tokens and real dumps are ignored and must never be committed or uploaded as evidence.
 
 ## Required gates
@@ -14,7 +14,7 @@ P1 is a release gate. It does not add payment, a real notification provider, ful
 | --- | --- | --- |
 | Clean install and static checks | `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm test`, `pnpm build` | workflow log and Jest output |
 | Schema and MySQL integrity | `pnpm p1:mysql` | deployed migrations and real MySQL assertions |
-| Packaged runtime | `pnpm p1:runtime-smoke` | Compose logs, API/readiness and worker/readiness results |
+| Packaged runtime recovery | `pnpm p1:runtime-smoke` | migration exit, HTTP statuses, restart count, heartbeat and outbox JSON report |
 | Browser UAT | `pnpm p1:browser` | Playwright trace, screenshot/video on failure and request IDs captured in the manual sheet |
 | Backup/restore | `pnpm p1:backup-restore` | `report.json`, redacted/synthetic dump only, MySQL invariant counts |
 

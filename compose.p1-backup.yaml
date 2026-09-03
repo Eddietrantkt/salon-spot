@@ -8,6 +8,8 @@ services:
       MYSQL_ROOT_PASSWORD: p1_root_only_for_disposable_rehearsal
     ports:
       - "3310:3306"
+    volumes:
+      - p1-source-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pp1_root_only_for_disposable_rehearsal"]
       interval: 3s
@@ -22,8 +24,14 @@ services:
       MYSQL_ROOT_PASSWORD: p1_root_only_for_disposable_rehearsal
     ports:
       - "3311:3306"
+    volumes:
+      - p1-restore-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pp1_root_only_for_disposable_rehearsal"]
       interval: 3s
       timeout: 3s
       retries: 30
+
+volumes:
+  p1-source-data:
+  p1-restore-data:
