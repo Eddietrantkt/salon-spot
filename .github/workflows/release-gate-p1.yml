@@ -93,8 +93,12 @@ jobs:
           P1_RUNTIME_ENV_FILE: .env.runtime.ci
         run: pnpm p1:runtime-smoke
       - name: Start isolated browser runtime
+        env:
+          RUNTIME_ENV_FILE: .env.runtime.ci
         run: docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml up --build -d
       - name: Seed isolated browser fixture
+        env:
+          RUNTIME_ENV_FILE: .env.runtime.ci
         run: docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml exec -T api node apps/api/dist/scripts/seed-demo.js
       - name: Browser release journeys
         env:
@@ -104,6 +108,8 @@ jobs:
         run: pnpm p1:backup-restore
       - name: Save release diagnostics
         if: always()
+        env:
+          RUNTIME_ENV_FILE: .env.runtime.ci
         run: |
           mkdir -p artifacts/ci
           docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml ps > artifacts/ci/browser-runtime-ps.txt || true
@@ -123,6 +129,8 @@ jobs:
             playwright-report/
       - name: Dispose runtime and rehearsal databases
         if: always()
+        env:
+          RUNTIME_ENV_FILE: .env.runtime.ci
         run: |
           docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml down --volumes || true
           docker compose --project-name salon-spot-p1-backup -f compose.p1-backup.yaml down --volumes || true
