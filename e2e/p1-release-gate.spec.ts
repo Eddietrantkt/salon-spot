@@ -42,8 +42,9 @@ for (const width of [320, 375, 768]) {
   test(`role navigation remains present at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toContainText('Explore');
-    await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toContainText('Owner');
-    await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toContainText('Admin');
+    const navigation = page.getByRole('navigation', { name: width <= 760 ? 'Mobile navigation' : 'Primary navigation' });
+    await expect(navigation).toContainText('Explore');
+    await expect(navigation).toContainText('Owner');
+    await expect(navigation).toContainText('Admin');
   });
 }
