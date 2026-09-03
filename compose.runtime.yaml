@@ -23,7 +23,20 @@ services:
       target: migration-runtime
     env_file: ${RUNTIME_ENV_FILE:-.env.runtime}
     working_dir: /app/apps/api
-    command: ["sh", "-ec", "test -x ./node_modules/.bin/prisma && ./node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma"]
+    command:
+      - sh
+      - -ec
+      - |
+        test -x ./node_modules/.bin/prisma
+        set +e
+        for attempt in 1 2 3; do
+          ./node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma
+          status=$$?
+          if [ "$$status" -eq 0 ]; then exit 0; fi
+          echo "prisma_migrate_retry attempt=$$attempt status=$$status"
+          if [ "$$attempt" -lt 3 ]; then sleep 2; fi
+        done
+        exit "$$status"
     depends_on:
       mysql:
         condition: service_healthy

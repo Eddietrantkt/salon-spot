@@ -73,6 +73,19 @@ function inspect(containerId) {
   return JSON.parse(result.stdout)[0];
 }
 
+function redactMigrationLog(value) {
+  return value.replace(/mysql:\/\/[^\s@]+@/gi, 'mysql://<REDACTED>@');
+}
+
+function serviceLogs(compose, envFile, service) {
+  const result = spawnSync('docker', [...compose, 'logs', '--no-color', service], {
+    cwd: process.cwd(),
+    env: { ...process.env, RUNTIME_ENV_FILE: envFile },
+    encoding: 'utf8'
+  });
+  return redactMigrationLog(`${result.stdout ?? ''}${result.stderr ?? ''}`).trim();
+}
+
 async function waitFor(label, predicate, timeoutMs = 180_000) {
   const deadline = Date.now() + timeoutMs;
   let lastError = 'not attempted';
@@ -135,10 +148,11 @@ async function main() {
   const startedAt = new Date().toISOString();
   const evidence = { gate: 'P1_RUNTIME_RECOVERY', status: 'failed', startedAt, project, baseUrl, migration: null, http: {}, worker: {}, heartbeats: {}, outbox: null };
   let isolated;
+  let compose;
   try {
     await mkdir(artifactDir, { recursive: true });
     isolated = await createIsolatedEnvFile();
-    const compose = composeArgs(isolated.file);
+    compose = composeArgs(isolated.file);
     run([...compose, 'down', '--volumes', ...(rebuildImages ? ['--rmi', 'local'] : [])], { envFile: isolated.file });
     if (rebuildImages) run([...compose, 'build', '--no-cache'], { envFile: isolated.file });
     run([...compose, 'up', '-d'], { envFile: isolated.file });
@@ -193,13 +207,19 @@ async function main() {
     console.log(`P1 runtime recovery smoke passed. Evidence: ${reportPath}`);
   } catch (error) {
     evidence.error = error instanceof Error ? error.message : 'P1 runtime recovery smoke failed.';
+    if (isolated && compose) {
+      evidence.migration = {
+        ...(evidence.migration ?? {}),
+        logs: serviceLogs(compose, isolated.file, 'migrate')
+      };
+    }
     await mkdir(artifactDir, { recursive: true });
     await writeFile(reportPath, `${JSON.stringify(evidence, null, 2)}\n`);
     throw error;
   } finally {
     if (isolated) {
       try {
-        run([...composeArgs(isolated.file), 'down', '--volumes', ...(rebuildImages ? ['--rmi', 'local'] : [])], { envFile: isolated.file });
+        run([...(compose ?? composeArgs(isolated.file)), 'down', '--volumes', ...(rebuildImages ? ['--rmi', 'local'] : [])], { envFile: isolated.file });
       } finally {
         await rm(isolated.directory, { recursive: true, force: true });
       }

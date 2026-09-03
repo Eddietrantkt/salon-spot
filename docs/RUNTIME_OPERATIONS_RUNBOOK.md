@@ -19,7 +19,7 @@ pnpm runtime:up
 docker compose --project-name salon-spot-runtime --env-file .env.runtime -f compose.runtime.yaml ps
 ```
 
-Expected order: MySQL becomes healthy, `migrate` exits successfully after `prisma migrate deploy`, then API and worker start, followed by web. Open `http://localhost:8080`. Health checks are:
+Expected order: MySQL becomes healthy, `migrate` exits successfully after `prisma migrate deploy`, then API and worker start, followed by web. The one-shot migration container retries Prisma at most three times with a two-second delay to absorb the short startup window where MySQL answers `mysqladmin ping` before Prisma can connect; it still exits non-zero if all attempts fail. Open `http://localhost:8080`. Health checks are:
 
 ```powershell
 Invoke-WebRequest http://localhost:8080/api/v1/health/live
