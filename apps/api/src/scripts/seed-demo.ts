@@ -21,6 +21,10 @@ const scryptAsync = promisify(scrypt);
 const PASSWORD = 'SalonDemo#2026';
 const TIMEZONE = 'Asia/Ho_Chi_Minh';
 const KEY_LENGTH = 64;
+// The disposable demo fixture performs a deliberately large, ordered seed over
+// Docker MySQL. Keep the transaction atomic without inheriting Prisma's 5s
+// interactive-transaction default, which is too short on a cold UAT runtime.
+const DEMO_SEED_TRANSACTION_TIMEOUT_MS = 30_000;
 
 const ids = {
   salonD1: 'demo_salon_d1',
@@ -174,7 +178,7 @@ async function main(): Promise<void> {
 
       await tx.auditEvent.deleteMany({ where: { entityType: 'DemoSeed', entityId: 'salon-spot-local-demo', action: 'DEMO_DATA_SEEDED' } });
       await tx.auditEvent.create({ data: { actorUserId: admin.id, entityType: 'DemoSeed', entityId: 'salon-spot-local-demo', action: 'DEMO_DATA_SEEDED', after: { areas: ['D1', 'D3'], daysSeeded: dates.length, workspaceCount: 4, source: 'local-demo-seed' } } });
-    });
+    }, { maxWait: 10_000, timeout: DEMO_SEED_TRANSACTION_TIMEOUT_MS });
 
     console.log('Demo data is ready.');
     console.log('Owner: owner.demo@salonspot.local / SalonDemo#2026');

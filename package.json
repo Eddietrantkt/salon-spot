@@ -13,7 +13,7 @@
     "p1:mysql": "node scripts/p1/run-mysql-e2e.mjs",
     "p1:runtime-smoke": "node scripts/p1/runtime-smoke.mjs",
     "p1:backup-restore": "node scripts/p1/backup-restore-rehearsal.mjs",
-    "p1:browser": "playwright test"
+    "p1:browser": "node scripts/p1/browser-uat.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.57.0"

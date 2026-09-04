@@ -46,12 +46,12 @@ Hoàn thành một vertical slice staging/UAT: Owner publish Workspace có ảnh
 - Đã bổ sung Professional profile guard/service, Booking Salon timezone/local-date snapshot, URL navigation và mobile Owner/Admin navigation.
 - Request ID được middleware gán trước guard và CORS expose `x-request-id`; Sharp/storage errors được log nội bộ và trả message an toàn.
 - Schema additive đã tách verification case, credential và private document; password reset gắn với `User` nên không phụ thuộc Owner/Professional role. Booking guard chưa đổi để tránh regression tài khoản cũ.
-- Chưa xác nhận: browser UAT authenticated đầy đủ; race media cap/cleanup; concurrent confirm/cancel; email provider retry.
+- Bản ghi 28/08 không còn là căn cứ release hiện hành. Browser UAT có xác thực, race media/cleanup và confirm/cancel phải được chạy lại qua các P1 gate; kết quả candidate hiện hành chỉ được đọc từ `docs/P1_TEST_EVIDENCE.md` cùng artifact tương ứng. Email provider retry vẫn chưa có.
 
 ## P1 release gate
 
 - Chạy MySQL disposable bắt buộc: `pnpm p1:mysql` (script tự generate Prisma, `migrate deploy` và đặt `RUN_MYSQL_E2E=1`).
 - Chạy P0 Compose smoke: `pnpm p1:runtime-smoke` sau khi chuẩn bị một `RUNTIME_ENV_FILE` không chứa secret production.
 - Chạy rehearsal backup/restore: `pnpm prisma:generate; pnpm build; pnpm p1:backup-restore`.
-- Browser Chromium dùng `pnpm p1:browser`; các case có đột biến quyền/session/timezone vẫn cần fixture và record request ID/DB result trong `docs/P1_TEST_EVIDENCE.md`.
+- `pnpm p1:browser` tự dựng packaged Compose fixture disposable, seed dữ liệu demo rồi chạy Chromium cho deep-link/refresh, session Owner/Admin và navigation 320/375/768px. Case mutation quyền, PENDING-versus-ACTIVE và timezone snapshot vẫn cần record request ID/DB result trong `docs/P1_TEST_EVIDENCE.md`; không coi UI automation đơn lẻ là chứng minh DB authorization.
 - CI hiện được cung cấp theo GitHub Actions tại `.github/workflows/release-gate-p1.yml`; Git host/secrets production phải được chủ dự án xác nhận trước release thật.

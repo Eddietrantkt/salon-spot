@@ -1,17 +1,31 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const composeFile = 'compose.runtime.yaml';
 const sourceEnvFile = process.env.P1_RUNTIME_ENV_FILE ?? process.env.RUNTIME_ENV_FILE ?? '.env.runtime';
-const project = process.env.P1_RUNTIME_COMPOSE_PROJECT ?? 'salon-spot-p1-runtime-smoke';
-const artifactDir = resolve(process.env.P1_RUNTIME_ARTIFACT_DIR ?? 'artifacts/p1-runtime-smoke');
+const runId = `${process.pid}-${Date.now()}`;
+const project = process.env.P1_RUNTIME_COMPOSE_PROJECT ?? `salon-spot-p1-runtime-${runId}`;
+const artifactDir = resolve(process.env.P1_RUNTIME_ARTIFACT_DIR ?? `artifacts/p1-runtime-smoke/${runId}`);
 const reportPath = resolve(artifactDir, 'report.json');
-const mysqlHostPort = process.env.P1_RUNTIME_MYSQL_HOST_PORT ?? '13307';
-const webHostPort = process.env.P1_RUNTIME_WEB_HOST_PORT ?? '18080';
-const baseUrl = process.env.P1_RUNTIME_BASE_URL ?? `http://127.0.0.1:${webHostPort}`;
 const rebuildImages = process.env.P1_RUNTIME_REBUILD !== '0';
+
+async function availablePort() {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen({ host: '127.0.0.1', port: 0 }, () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        server.close(() => reject(new Error('Unable to allocate an isolated host port.')));
+        return;
+      }
+      server.close((error) => error ? reject(error) : resolve(String(address.port)));
+    });
+  });
+}
 
 function parseEnv(source) {
   const values = new Map();
@@ -23,7 +37,7 @@ function parseEnv(source) {
   return values;
 }
 
-async function createIsolatedEnvFile() {
+async function createIsolatedEnvFile(mysqlHostPort, webHostPort, baseUrl) {
   const source = await readFile(sourceEnvFile, 'utf8').catch(async (error) => {
     if (error && error.code === 'ENOENT') return readFile('.env.runtime.example', 'utf8');
     throw error;
@@ -146,12 +160,15 @@ function crashWorkerProcess(containerId) {
 
 async function main() {
   const startedAt = new Date().toISOString();
+  const mysqlHostPort = process.env.P1_RUNTIME_MYSQL_HOST_PORT ?? await availablePort();
+  const webHostPort = process.env.P1_RUNTIME_WEB_HOST_PORT ?? await availablePort();
+  const baseUrl = process.env.P1_RUNTIME_BASE_URL ?? `http://127.0.0.1:${webHostPort}`;
   const evidence = { gate: 'P1_RUNTIME_RECOVERY', status: 'failed', startedAt, project, baseUrl, migration: null, http: {}, worker: {}, heartbeats: {}, outbox: null };
   let isolated;
   let compose;
   try {
     await mkdir(artifactDir, { recursive: true });
-    isolated = await createIsolatedEnvFile();
+    isolated = await createIsolatedEnvFile(mysqlHostPort, webHostPort, baseUrl);
     compose = composeArgs(isolated.file);
     run([...compose, 'down', '--volumes', ...(rebuildImages ? ['--rmi', 'local'] : [])], { envFile: isolated.file });
     if (rebuildImages) run([...compose, 'build', '--no-cache'], { envFile: isolated.file });
