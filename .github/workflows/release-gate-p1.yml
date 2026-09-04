@@ -20,6 +20,9 @@ jobs:
       REFRESH_TOKEN_PEPPER: ci-only-refresh-pepper-must-be-at-least-thirty-two-characters
       MEDIA_UPLOAD_SECRET: ci-only-media-secret-must-be-at-least-thirty-two-characters
       MEDIA_STORAGE_ROOT: .data/ci-media
+      P1_RUNTIME_ARTIFACT_DIR: artifacts/p1-runtime-smoke/ci-${{ github.run_id }}
+      P1_BROWSER_ARTIFACT_DIR: artifacts/p1-browser/ci-${{ github.run_id }}
+      P1_ARTIFACT_DIR: artifacts/p1-backup-restore/ci-${{ github.run_id }}
     services:
       mysql:
         image: mysql:8.4
@@ -37,6 +40,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Record candidate identity
+        run: |
+          mkdir -p artifacts/ci
+          node -e "require('node:fs').writeFileSync('artifacts/ci/candidate.json', JSON.stringify({sha: process.env.GITHUB_SHA, ref: process.env.GITHUB_REF, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, runUrl: process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/actions/runs/' + process.env.GITHUB_RUN_ID}, null, 2) + '\n')"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -55,82 +62,39 @@ jobs:
       - name: Production build
         run: pnpm build
       - name: Prisma deploy and mandatory MySQL E2E
-        run: pnpm p1:mysql
-      - name: Write disposable runtime environment
         run: |
-          cat > .env.runtime.ci <<'EOF'
-          MYSQL_DATABASE=salon_spot
-          MYSQL_USER=salon_spot
-          MYSQL_PASSWORD=salon_spot
-          MYSQL_ROOT_PASSWORD=ci_runtime_root_only
-          MYSQL_HOST_PORT=3312
-          WEB_HOST_PORT=8088
-          DATABASE_URL=mysql://salon_spot:salon_spot@mysql:3306/salon_spot
-          PORT=3000
-          WORKER_PORT=3001
-          WEB_ORIGIN=http://localhost:8088
-          NODE_ENV=production
-          JWT_ACCESS_SECRET=ci-only-jwt-secret-must-be-at-least-thirty-two-characters
-          REFRESH_TOKEN_PEPPER=ci-only-refresh-pepper-must-be-at-least-thirty-two-characters
-          ACCESS_TOKEN_TTL_SECONDS=900
-          REFRESH_TOKEN_TTL_DAYS=14
-          MEDIA_UPLOAD_SECRET=ci-only-media-secret-must-be-at-least-thirty-two-characters
-          MEDIA_PUBLIC_BASE_URL=http://localhost:8088/api/v1
-          MEDIA_STORAGE_ROOT=/data/media
-          MEDIA_UPLOAD_TTL_SECONDS=900
-          MEDIA_MAX_UPLOAD_BYTES=10000000
-          MEDIA_MAX_PIXEL_COUNT=40000000
-          SLOT_HOLD_TTL_SECONDS=600
-          HEALTH_DB_TIMEOUT_MS=3000
-          WORKER_TICK_INTERVAL_SECONDS=1
-          WORKER_STARTUP_GRACE_SECONDS=1
-          WORKER_STALE_AFTER_SECONDS=30
-          WORKER_WATCHDOG_INTERVAL_SECONDS=1
-          WORKER_SHUTDOWN_GRACE_SECONDS=20
-          EOF
+          mkdir -p artifacts/p1-mysql-e2e
+          set -o pipefail
+          pnpm p1:mysql 2>&1 | tee artifacts/p1-mysql-e2e/test.log
       - name: P0 runtime recovery smoke
-        env:
-          P1_RUNTIME_ENV_FILE: .env.runtime.ci
         run: pnpm p1:runtime-smoke
-      - name: Start isolated browser runtime
-        env:
-          RUNTIME_ENV_FILE: .env.runtime.ci
-        run: docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml up --build -d
-      - name: Seed isolated browser fixture
-        env:
-          RUNTIME_ENV_FILE: .env.runtime.ci
-        run: docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml exec -T api node apps/api/dist/scripts/seed-demo.js
       - name: Browser release journeys
-        env:
-          E2E_BASE_URL: http://127.0.0.1:8088
         run: pnpm p1:browser
       - name: Backup and restore rehearsal
+        env:
+          # The GitHub runner is dedicated to this one job; keep a fixed name so
+          # the always-run diagnostic and cleanup steps can address the stack.
+          P1_BACKUP_COMPOSE_PROJECT: salon-spot-p1-backup
         run: pnpm p1:backup-restore
+      - name: Verify release evidence bundle
+        run: node scripts/p1/verify-release-evidence.mjs
       - name: Save release diagnostics
         if: always()
-        env:
-          RUNTIME_ENV_FILE: .env.runtime.ci
         run: |
           mkdir -p artifacts/ci
-          docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml ps > artifacts/ci/browser-runtime-ps.txt || true
-          docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml logs --no-color > artifacts/ci/browser-runtime.log || true
           docker compose --project-name salon-spot-p1-backup -f compose.p1-backup.yaml ps > artifacts/ci/backup-restore-ps.txt || true
           docker compose --project-name salon-spot-p1-backup -f compose.p1-backup.yaml logs --no-color > artifacts/ci/backup-restore.log || true
-          docker image inspect salon-spot-p1-browser-api --format '{{.Id}}' > artifacts/ci/runtime-image-id.txt || true
       - name: Upload release diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: p1-release-evidence-${{ github.run_id }}
-          if-no-files-found: warn
+          if-no-files-found: error
           path: |
             artifacts/
             test-results/
             playwright-report/
       - name: Dispose runtime and rehearsal databases
         if: always()
-        env:
-          RUNTIME_ENV_FILE: .env.runtime.ci
         run: |
-          docker compose --project-name salon-spot-p1-browser --env-file .env.runtime.ci -f compose.runtime.yaml down --volumes || true
           docker compose --project-name salon-spot-p1-backup -f compose.p1-backup.yaml down --volumes || true

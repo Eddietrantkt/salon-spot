@@ -1,16 +1,31 @@
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 
-const project = process.env.P1_BACKUP_COMPOSE_PROJECT ?? 'salon-spot-p1-backup';
+const runId = `${process.pid}-${Date.now()}`;
+const project = process.env.P1_BACKUP_COMPOSE_PROJECT ?? `salon-spot-p1-backup-${runId}`;
 const compose = ['compose', '--project-name', project, '-f', 'compose.p1-backup.yaml'];
-const sourceUrl = 'mysql://p1_user:p1_password_only_for_disposable_rehearsal@127.0.0.1:3310/p1_source';
-const restoreUrl = 'mysql://p1_user:p1_password_only_for_disposable_rehearsal@127.0.0.1:3311/p1_restore';
-const artifactDir = resolve(process.env.P1_ARTIFACT_DIR ?? 'artifacts/p1-backup-restore');
+const artifactDir = resolve(process.env.P1_ARTIFACT_DIR ?? `artifacts/p1-backup-restore/${runId}`);
 const dumpPath = resolve(artifactDir, 'p1-source.sql');
 const reportPath = resolve(artifactDir, 'report.json');
 const prismaCli = resolve('apps/api/node_modules/prisma/build/index.js');
 const schemaPath = resolve('apps/api/prisma/schema.prisma');
+
+async function availablePort() {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen({ host: '127.0.0.1', port: 0 }, () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        server.close(() => reject(new Error('Unable to allocate an isolated host port.')));
+        return;
+      }
+      server.close((error) => error ? reject(error) : resolve(String(address.port)));
+    });
+  });
+}
 
 function run(command, args, env = process.env, output = 'inherit', input) {
   const result = spawnSync(command, args, { cwd: process.cwd(), env, input, stdio: output });
@@ -73,12 +88,12 @@ function terminate(child) {
   });
 }
 
-async function postRestoreSmoke() {
+async function postRestoreSmoke(restoreUrl, apiPort, workerPort) {
   const env = {
     ...process.env,
     DATABASE_URL: restoreUrl,
-    PORT: '3302',
-    WORKER_PORT: '3303',
+    PORT: apiPort,
+    WORKER_PORT: workerPort,
     JWT_ACCESS_SECRET: 'p1-rehearsal-jwt-secret-must-be-at-least-thirty-two-characters',
     REFRESH_TOKEN_PEPPER: 'p1-rehearsal-refresh-secret-must-be-at-least-thirty-two-characters',
     MEDIA_UPLOAD_SECRET: 'p1-rehearsal-media-secret-must-be-at-least-thirty-two-characters',
@@ -92,8 +107,8 @@ async function postRestoreSmoke() {
   const worker = spawn(process.execPath, ['apps/api/dist/worker-main.js'], { cwd: process.cwd(), env, stdio: 'inherit' });
   try {
     return {
-      apiReady: await waitForHttp('http://127.0.0.1:3302/api/v1/health/ready', 'restored API'),
-      workerReady: await waitForHttp('http://127.0.0.1:3303/worker/health/ready', 'restored worker', 90_000)
+      apiReady: await waitForHttp(`http://127.0.0.1:${apiPort}/api/v1/health/ready`, 'restored API'),
+      workerReady: await waitForHttp(`http://127.0.0.1:${workerPort}/worker/health/ready`, 'restored worker', 90_000)
     };
   } finally {
     await Promise.all([terminate(api), terminate(worker)]);
@@ -113,11 +128,18 @@ function mapCounts(values) {
 
 async function main() {
   const startedAt = new Date();
-  const evidence = { gate: 'P1_BACKUP_RESTORE', status: 'failed', startedAt: startedAt.toISOString(), project, migration: {}, backup: {}, restore: {}, countInvariant: null, readinessAfterRestore: null };
+  const sourceHostPort = process.env.P1_BACKUP_SOURCE_HOST_PORT ?? await availablePort();
+  const restoreHostPort = process.env.P1_BACKUP_RESTORE_HOST_PORT ?? await availablePort();
+  const apiPort = process.env.P1_BACKUP_API_PORT ?? await availablePort();
+  const workerPort = process.env.P1_BACKUP_WORKER_PORT ?? await availablePort();
+  const sourceUrl = `mysql://p1_user:p1_password_only_for_disposable_rehearsal@127.0.0.1:${sourceHostPort}/p1_source`;
+  const restoreUrl = `mysql://p1_user:p1_password_only_for_disposable_rehearsal@127.0.0.1:${restoreHostPort}/p1_restore`;
+  const composeEnvironment = { ...process.env, P1_BACKUP_SOURCE_HOST_PORT: sourceHostPort, P1_BACKUP_RESTORE_HOST_PORT: restoreHostPort };
+  const evidence = { gate: 'P1_BACKUP_RESTORE', status: 'failed', startedAt: startedAt.toISOString(), project, sourceHostPort, restoreHostPort, apiPort, workerPort, migration: {}, backup: {}, restore: {}, countInvariant: null, readinessAfterRestore: null };
   try {
     await mkdir(artifactDir, { recursive: true });
-    run('docker', [...compose, 'down', '--volumes']);
-    run('docker', [...compose, 'up', '-d']);
+    run('docker', [...compose, 'down', '--volumes'], composeEnvironment);
+    run('docker', [...compose, 'up', '-d'], composeEnvironment);
     await Promise.all([waitForService('source'), waitForService('restore')]);
 
     const sourceMigrationStartedAt = Date.now();
@@ -142,7 +164,7 @@ async function main() {
     if (sourceCounts.some((value, index) => value !== restoredCounts[index])) throw new Error(`Restored counts differ from source: ${sourceCounts.join(',')} != ${restoredCounts.join(',')}`);
     evidence.restore.ms = Date.now() - restoreStartedAt;
     evidence.countInvariant = { source: mapCounts(sourceCounts), restored: mapCounts(restoredCounts), matched: true };
-    evidence.readinessAfterRestore = await postRestoreSmoke();
+    evidence.readinessAfterRestore = await postRestoreSmoke(restoreUrl, apiPort, workerPort);
     const dumpStats = await stat(dumpPath);
     evidence.backup.dumpBytes = dumpStats.size;
     evidence.status = 'passed';
@@ -154,7 +176,7 @@ async function main() {
     await writeFile(reportPath, `${JSON.stringify(evidence, null, 2)}\n`);
     throw error;
   } finally {
-    run('docker', [...compose, 'down', '--volumes']);
+    run('docker', [...compose, 'down', '--volumes'], composeEnvironment);
   }
 }
 

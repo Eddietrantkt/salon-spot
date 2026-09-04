@@ -7,7 +7,7 @@ services:
       MYSQL_PASSWORD: p1_password_only_for_disposable_rehearsal
       MYSQL_ROOT_PASSWORD: p1_root_only_for_disposable_rehearsal
     ports:
-      - "3310:3306"
+      - "${P1_BACKUP_SOURCE_HOST_PORT:-3310}:3306"
     volumes:
       - p1-source-data:/var/lib/mysql
     healthcheck:
@@ -23,7 +23,7 @@ services:
       MYSQL_PASSWORD: p1_password_only_for_disposable_rehearsal
       MYSQL_ROOT_PASSWORD: p1_root_only_for_disposable_rehearsal
     ports:
-      - "3311:3306"
+      - "${P1_BACKUP_RESTORE_HOST_PORT:-3311}:3306"
     volumes:
       - p1-restore-data:/var/lib/mysql
     healthcheck:
