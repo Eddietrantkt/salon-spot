@@ -103,12 +103,18 @@ async function captureComposeDiagnostics(compose, envFile) {
 
 async function waitFor(label, predicate, timeoutMs = 180_000) {
   const deadline = Date.now() + timeoutMs;
+  let lastError;
   while (Date.now() < deadline) {
-    const value = await predicate();
-    if (value) return value;
+    try {
+      const value = await predicate();
+      if (value) return value;
+    } catch (error) {
+      lastError = error;
+    }
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
-  throw new Error(`${label} did not become ready.`);
+  const detail = lastError instanceof Error ? ` Last transient error: ${lastError.message}` : '';
+  throw new Error(`${label} did not become ready.${detail}`);
 }
 
 async function main() {
