@@ -1,22 +1,24 @@
 # P1 Test Evidence Record
 
-> Local P1 evidence for the exact candidate below. This is a controlled, disposable-fixture result; it is not an assertion about an external notification provider, payments, HA, or hosted CI access that was not available in this session.
+> P1 evidence records for the candidates below. Local fixtures are controlled and disposable; the hosted attestation is separately linked. Neither is an assertion about external notification providers, payments, or HA.
 
-## Successor candidate preparation — 2026-09-04
+## Successor candidate attestation — 2026-09-04
 
-The working tree based on `631d2856dcac68edf83abb77f54c89495959ec3b` contains the isolated browser/runtime/backup runner changes and is **not yet a signed candidate**. Local verification completed before freezing the SHA:
+The isolated browser/runtime/backup runner changes were frozen in implementation candidate [`62f95f2650e7dd5afb35a492970a29544e5fa610`](https://github.com/Eddietrantkt/salon-spot/commit/62f95f2650e7dd5afb35a492970a29544e5fa610). Local verification completed before freezing that SHA, then GitHub Actions performed an authenticated clean-checkout validation:
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
-| Typecheck and production build | PASS | Local command output; no candidate SHA assigned yet |
+| Typecheck and production build | PASS | Local run, then verified again by Hosted CI run #7 |
 | API and web tests | PASS | API 42 suites/112 tests; web 7/7 |
 | Mandatory MySQL E2E | PASS | Clean disposable MySQL 8.4 rerun: 15/15 |
 | Packaged browser UAT | PASS | `artifacts/p1-browser/2328-1788494024422/report.json`; seed 1,338 ms; Chromium 6/6; cleanup PASS |
 | Runtime recovery | PASS | `artifacts/p1-runtime-smoke/11628-1788494484526/report.json`; restart count 0→1; readiness/heartbeats/outbox PASS |
 | Backup/restore | PASS | `artifacts/p1-backup-restore/27116-1788495005670/report.json`; exact count invariant and restored API/worker readiness PASS |
-| Hosted CI | PENDING | Requires an immutable commit SHA, hosted workflow URL and downloadable artifact |
+| Hosted CI | PASS | [Release gate P1 run #7](https://github.com/Eddietrantkt/salon-spot/actions/runs/33836585428), run ID `33836585428`, 4m 41s; exact checked-out implementation SHA `62f95f2650e7dd5afb35a492970a29544e5fa610` |
 
-This preparation record does not replace the historical `631d285` record below and does not authorize deployment. The hosted workflow generates `candidate.json` and a SHA-256 manifest from the exact SHA it runs.
+The hosted artifact [`p1-release-evidence-33836585428`](https://github.com/Eddietrantkt/salon-spot/actions/runs/33836585428/artifacts/9923561457) is 257 KB with GitHub artifact digest `sha256:4228de675c2808dad9146f94f69ab18be093e91f875f3c305fd851753ffec9a5`. It contains `candidate.json`, the three gate reports, diagnostics, and the SHA-256 evidence manifest generated from the exact SHA it ran.
+
+This attestation record does not replace the historical `631d285` record below and does not authorize deployment. This documentation update is post-run bookkeeping; the immutable hosted artifact above is the authoritative attestation for the implementation candidate.
 
 ## Historical local evidence — candidate `631d285`
 
