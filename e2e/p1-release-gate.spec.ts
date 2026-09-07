@@ -19,6 +19,16 @@ test('direct URLs, refresh and browser back preserve public navigation', async (
   await expect(page.getByRole('link', { name: 'Explore' }).first()).toBeVisible();
 });
 
+test('public search rejects dates before tomorrow', async ({ page }) => {
+  await page.goto('/');
+  const date = page.locator('input[type="date"]').first();
+  const pastDate = new Date();
+  pastDate.setDate(pastDate.getDate() - 1);
+  await date.fill(pastDate.toISOString().slice(0, 10));
+
+  expect(await date.evaluate((control) => (control as HTMLInputElement).validity.rangeUnderflow)).toBe(true);
+});
+
 test('Owner session persists while the Admin console rejects its unavailable capability', async ({ page }) => {
   await page.goto('/owner');
   await page.getByRole('button', { name: 'Sign in to Owner Console' }).click();

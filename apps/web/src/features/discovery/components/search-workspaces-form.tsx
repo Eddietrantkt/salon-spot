@@ -1,4 +1,5 @@
-import { useId, type FormEvent, type JSX } from 'react';
+import { useId, type FormEvent, type JSX, type Ref } from 'react';
+import { tomorrowInLocalCalendar } from '../../../shared/date/local-date';
 import { useI18n } from '../../../shared/i18n/i18n-provider';
 
 const suggestedLocations = [
@@ -12,6 +13,7 @@ interface SearchWorkspacesFormProps {
   date: string;
   isLoading: boolean;
   variant?: 'hero' | 'results';
+  locationInputRef?: Ref<HTMLInputElement>;
   onAreaChange: (area: string) => void;
   onDateChange: (date: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -22,6 +24,7 @@ export function SearchWorkspacesForm({
   date,
   isLoading,
   variant = 'hero',
+  locationInputRef,
   onAreaChange,
   onDateChange,
   onSubmit
@@ -34,7 +37,7 @@ export function SearchWorkspacesForm({
         <span className="search-field-icon" aria-hidden="true">⌖</span>
         <label>
           <span>{t('Location', 'Địa điểm')}</span>
-          <input list={locationSuggestionsId} placeholder={t('District, neighbourhood, or city', 'Quận, khu vực hoặc thành phố')} value={area} onChange={(event) => onAreaChange(event.target.value)} required maxLength={120} />
+          <input ref={locationInputRef} list={locationSuggestionsId} placeholder={t('District, neighbourhood, or city', 'Quận, khu vực hoặc thành phố')} value={area} onChange={(event) => onAreaChange(event.target.value)} required maxLength={120} />
         </label>
         <datalist id={locationSuggestionsId}>
           {suggestedLocations.map((location) => <option key={location.value} value={location.value}>{t(location.label[0], location.label[1])}</option>)}
@@ -44,7 +47,7 @@ export function SearchWorkspacesForm({
         <span className="search-field-icon" aria-hidden="true">◷</span>
         <label>
           <span>{t('Date', 'Ngày')}</span>
-          <input type="date" value={date} onChange={(event) => onDateChange(event.target.value)} required />
+          <input type="date" min={tomorrowInLocalCalendar()} value={date} onChange={(event) => onDateChange(event.target.value)} required />
         </label>
       </div>
       <button className="search-submit" type="submit" disabled={isLoading}>{isLoading ? t('Searching…', 'Đang tìm…') : t('Search workspaces', 'Tìm không gian')}</button>

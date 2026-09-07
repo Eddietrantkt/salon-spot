@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { AvailabilitySlotStatus, MediaStatus, Prisma, WorkspaceStatus } from '@prisma/client';
 import type { WorkspaceSearchItem, WorkspaceSearchResponse } from '@salon-spot/contracts';
 import { MediaConfigService } from '../../../common/config/media-config.service.js';
@@ -6,6 +6,7 @@ import { PrismaService } from '../../../common/database/prisma/prisma.service.js
 import type { SearchWorkspacesQuery } from '../presentation/dto/search-workspaces.query.js';
 
 const PAGE_SIZE = 20;
+const MARKETPLACE_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
 /** Public read interface for workspace discovery. Prisma query details remain internal to this module. */
 @Injectable()
@@ -13,6 +14,9 @@ export class SearchWorkspacesService {
   constructor(private readonly prisma: PrismaService, private readonly mediaConfig: MediaConfigService) {}
 
   async search(query: SearchWorkspacesQuery): Promise<WorkspaceSearchResponse> {
+    if (query.date < localDateInTimezone(new Date(), MARKETPLACE_TIMEZONE)) {
+      throw new BadRequestException('Search date cannot be in the past.');
+    }
     const localDate = new Date(`${query.date}T00:00:00.000Z`);
     const where: Prisma.WorkspaceWhereInput = {
       status: WorkspaceStatus.PUBLISHED,
@@ -64,4 +68,14 @@ export class SearchWorkspacesService {
 
     return { data, meta: { page: 1, pageSize: PAGE_SIZE, total } };
   }
+}
+
+function localDateInTimezone(now: Date, timezone: string): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(now).filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }

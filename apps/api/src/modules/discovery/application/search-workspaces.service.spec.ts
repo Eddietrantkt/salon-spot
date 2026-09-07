@@ -22,7 +22,7 @@ describe('SearchWorkspacesService', () => {
       $transaction: jest.fn((operations: readonly Promise<unknown>[]) => Promise.all(operations))
     } as unknown as PrismaService;
 
-    const result = await new SearchWorkspacesService(prisma, { publicBaseUrl: 'http://localhost/api/v1' } as MediaConfigService).search({ area: 'D1', date: '2026-08-24' });
+    const result = await new SearchWorkspacesService(prisma, { publicBaseUrl: 'http://localhost/api/v1' } as MediaConfigService).search({ area: 'D1', date: '2099-08-24' });
 
     expect(result.data[0]).toMatchObject({ workspaceId: 'workspace_1', availableSlotCount: 2 });
     expect(result.meta).toEqual({ page: 1, pageSize: 20, total: 1 });
@@ -30,5 +30,15 @@ describe('SearchWorkspacesService', () => {
       status: WorkspaceStatus.PUBLISHED,
       slots: { some: { status: AvailabilitySlotStatus.OPEN } }
     });
+  });
+
+  it('rejects search dates that are already past in the marketplace timezone', async () => {
+    const findMany = jest.fn();
+    const prisma = { workspace: { findMany, count: jest.fn() } } as unknown as PrismaService;
+
+    await expect(new SearchWorkspacesService(prisma, { publicBaseUrl: 'http://localhost/api/v1' } as MediaConfigService)
+      .search({ area: 'D1', date: '2000-01-01' }))
+      .rejects.toThrow('Search date cannot be in the past.');
+    expect(findMany).not.toHaveBeenCalled();
   });
 });

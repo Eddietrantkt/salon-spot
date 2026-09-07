@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type JSX } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type JSX } from 'react';
 import type { WorkspaceSearchItem } from '@salon-spot/contracts';
 import { searchWorkspaces } from '../api/search-workspaces';
 import { SearchFeedback } from '../components/search-feedback';
@@ -24,6 +24,7 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(initialHasSearched);
+  const resultsLocationInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialHasSearched) void search(initialArea, initialDate);
@@ -65,6 +66,11 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
     }
   }
 
+  function refineSearch(): void {
+    resultsLocationInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    resultsLocationInputRef.current?.focus({ preventScroll: true });
+  }
+
   return (
     <main className="page-shell discovery-shell">
       <header className="discovery-hero">
@@ -88,11 +94,12 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
         date={date}
         isLoading={isLoading}
         variant="results"
+        locationInputRef={resultsLocationInputRef}
         onAreaChange={changeArea}
         onDateChange={changeDate}
         onSubmit={onSubmit}
       /></div>}
-      <SearchFeedback error={error} hasSearched={hasSearched} isLoading={isLoading} hasItems={items.length > 0} />
+      <SearchFeedback error={error} hasSearched={hasSearched} isLoading={isLoading} hasItems={items.length > 0} onRefineSearch={refineSearch} />
 
       {hasSearched && !isLoading && items.length > 0 && <header className="result-heading"><div><p className="eyebrow">{t('AVAILABLE WORKSPACES', 'KHÔNG GIAN ĐANG TRỐNG')}</p><h2>{t('Spaces for your next session', 'Không gian cho buổi làm việc tiếp theo')}</h2></div><span>{items.length} {t(items.length === 1 ? 'space' : 'spaces', 'không gian')}</span></header>}
       <section className="workspace-grid" aria-live="polite" aria-busy={isLoading}>

@@ -11,3 +11,7 @@ export function searchFeedbackMessage({ hasSearched, hasItems, isLoading }: Sear
   }
   return 'Choose a location and date to see live workspace availability.';
 }
+
+export function searchFeedbackAction({ hasSearched, hasItems, isLoading }: SearchFeedbackState): 'refine-search' | null {
+  return hasSearched && !hasItems && !isLoading ? 'refine-search' : null;
+}

@@ -7,6 +7,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://salon-spot-api.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
