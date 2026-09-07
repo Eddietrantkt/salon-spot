@@ -1,0 +1,32 @@
+# $0 preview Blueprint. Import only after adding the required values marked
+# sync: false. autoDeploy is intentionally disabled for this POC.
+services:
+  - type: web
+    name: salon-spot-api
+    runtime: docker
+    plan: free
+    autoDeploy: false
+    dockerfilePath: ./infra/Dockerfile.render-api
+    dockerContext: .
+    dockerCommand: >-
+      sh -ec './apps/api/node_modules/.bin/prisma migrate deploy --schema apps/api/prisma/schema.prisma && exec node apps/api/dist/main.js'
+    healthCheckPath: /api/v1/health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: REFRESH_TOKEN_PEPPER
+        sync: false
+      - key: MEDIA_UPLOAD_SECRET
+        sync: false
+      - key: MEDIA_PUBLIC_BASE_URL
+        sync: false
+      - key: MEDIA_STORAGE_ROOT
+        value: /tmp/media
