@@ -19,7 +19,7 @@ test('direct URLs, refresh and browser back preserve public navigation', async (
   await expect(page.getByRole('link', { name: 'Explore' }).first()).toBeVisible();
 });
 
-test('role-specific consoles require and restore only their permitted session', async ({ page }) => {
+test('Owner session persists while the Admin console rejects its unavailable capability', async ({ page }) => {
   await page.goto('/owner');
   await page.getByRole('button', { name: 'Sign in to Owner Console' }).click();
   await signIn(page, 'owner.demo@salonspot.local');
@@ -27,6 +27,7 @@ test('role-specific consoles require and restore only their permitted session', 
 
   await page.goto('/admin');
   await expect(page.getByRole('heading', { name: 'System administration' })).toBeVisible();
+  await expect(page.getByText('Signed in as Linh Nguyen — Owner Demo')).toBeVisible();
   await expect(page.getByText(/not authorized|administrator|forbidden/i)).toBeVisible();
 });
 

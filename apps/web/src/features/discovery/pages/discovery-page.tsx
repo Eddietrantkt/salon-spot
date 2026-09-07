@@ -5,6 +5,8 @@ import { SearchFeedback } from '../components/search-feedback';
 import { SearchWorkspacesForm } from '../components/search-workspaces-form';
 import { WorkspaceCard } from '../components/workspace-card';
 import { tomorrowInLocalCalendar } from '../../../shared/date/local-date';
+import { useI18n } from '../../../shared/i18n/i18n-provider';
+import { localizedErrorMessage } from '../../../shared/i18n/localized-error-message';
 
 interface DiscoveryPageProps {
   initialArea: string;
@@ -15,6 +17,7 @@ interface DiscoveryPageProps {
 }
 
 export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, onSearchCommitted, onSelectWorkspace }: DiscoveryPageProps): JSX.Element {
+  const { t } = useI18n();
   const [area, setArea] = useState(initialArea || 'D1');
   const [date, setDate] = useState(initialDate || tomorrowInLocalCalendar);
   const [items, setItems] = useState<WorkspaceSearchItem[]>([]);
@@ -56,7 +59,7 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
       setItems(response.data);
     } catch (reason) {
       setItems([]);
-      setError(reason instanceof Error ? reason.message : 'Something went wrong. Please try again.');
+      setError(localizedErrorMessage(reason, t));
     } finally {
       setIsLoading(false);
     }
@@ -66,9 +69,9 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
     <main className="page-shell discovery-shell">
       <header className="discovery-hero">
         <div className="discovery-copy">
-          <p className="eyebrow">THE SALON SPOT · FLEXIBLE BEAUTY SPACES</p>
-          <h1>Find a workspace that <em>fits your craft.</em></h1>
-          <p className="lead">Explore professional-ready salon spaces by location and date. Availability is always confirmed by the live schedule.</p>
+          <p className="eyebrow">{t('THE SALON SPOT · FLEXIBLE BEAUTY SPACES', 'THE SALON SPOT · KHÔNG GIAN LÀM ĐẸP LINH HOẠT')}</p>
+          <h1>{t('Find a workspace that ', 'Tìm không gian ')}<em>{t('fits your craft.', 'phù hợp với tay nghề của bạn.')}</em></h1>
+          <p className="lead">{t('Explore professional-ready salon spaces by location and date. Availability is always confirmed by the live schedule.', 'Khám phá không gian salon chuyên nghiệp theo địa điểm và ngày. Tình trạng còn trống luôn được xác nhận theo lịch trực tiếp.')}</p>
         </div>
         <SearchWorkspacesForm
           area={area}
@@ -91,7 +94,7 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
       /></div>}
       <SearchFeedback error={error} hasSearched={hasSearched} isLoading={isLoading} hasItems={items.length > 0} />
 
-      {hasSearched && !isLoading && items.length > 0 && <header className="result-heading"><div><p className="eyebrow">AVAILABLE WORKSPACES</p><h2>Spaces for your next session</h2></div><span>{items.length} {items.length === 1 ? 'space' : 'spaces'}</span></header>}
+      {hasSearched && !isLoading && items.length > 0 && <header className="result-heading"><div><p className="eyebrow">{t('AVAILABLE WORKSPACES', 'KHÔNG GIAN ĐANG TRỐNG')}</p><h2>{t('Spaces for your next session', 'Không gian cho buổi làm việc tiếp theo')}</h2></div><span>{items.length} {t(items.length === 1 ? 'space' : 'spaces', 'không gian')}</span></header>}
       <section className="workspace-grid" aria-live="polite" aria-busy={isLoading}>
         {isLoading ? <WorkspaceGridSkeleton /> : items.map((item) => <WorkspaceCard item={item} key={item.workspaceId} onSelect={(workspaceId) => onSelectWorkspace(workspaceId, area, date)} />)}
       </section>

@@ -9,6 +9,8 @@ import { LoginPage, type LoginDestination } from '../features/auth/pages/login-p
 import { ProfessionalOnboardingPage } from '../features/professionals/pages/professional-onboarding-page';
 import { logout } from '../features/auth/api/auth-api';
 import { tomorrowInLocalCalendar } from '../shared/date/local-date';
+import { LanguageSwitcher } from '../shared/i18n/language-switcher';
+import { useI18n } from '../shared/i18n/i18n-provider';
 
 type RouteName = 'discovery' | 'workspace' | 'bookings' | 'owner' | 'admin' | 'professional-onboarding' | 'login' | 'not-found';
 
@@ -20,6 +22,7 @@ interface Route {
 }
 
 export function App(): JSX.Element {
+  const { t } = useI18n();
   const [route, setRoute] = useState<Route>(readRoute);
   const [session, setSession] = useState<AuthenticationResponse | null>(null);
 
@@ -46,27 +49,28 @@ export function App(): JSX.Element {
   }
 
   const currentPath = `${route.pathname}${window.location.search}`;
-  const content = renderRoute(route, currentPath, navigate, openLogin, setSession, session);
+  const content = renderRoute(route, currentPath, navigate, openLogin, setSession, session, t);
 
   return (
     <div className="app-frame">
       <header className="site-header">
         <NavigationLink className="brand" to="/" onNavigate={navigate}>The Salon Spot</NavigationLink>
-        <nav className="app-nav" aria-label="Primary navigation">
-          <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>Explore</NavigationLink>
-          <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>My bookings</NavigationLink>
-          <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>Owner</NavigationLink>
-          <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>Admin</NavigationLink>
-          {session ? <div className="account-status"><span aria-live="polite">Hi, {session.user.displayName}</span><button className="text-button" type="button" onClick={() => void signOut()}>Sign out</button></div> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>Sign in</NavigationLink>}
+        <nav className="app-nav" aria-label={t('Primary navigation', 'Điều hướng chính')}>
+          <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
+          <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('My bookings', 'Lịch đặt của tôi')}</NavigationLink>
+          <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>
+          <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>
+          {session ? <div className="account-status"><span aria-live="polite">{t('Hi', 'Xin chào')}, {session.user.displayName}</span><button className="text-button" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
         </nav>
+        <LanguageSwitcher />
       </header>
       {content}
-      <nav className="mobile-nav" aria-label="Mobile navigation">
-        <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>Explore</NavigationLink>
-        <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>Bookings</NavigationLink>
-        <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>Owner</NavigationLink>
-        <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>Admin</NavigationLink>
-        {session ? <button type="button" onClick={() => void signOut()}>Sign out</button> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>Sign in</NavigationLink>}
+      <nav className="mobile-nav" aria-label={t('Mobile navigation', 'Điều hướng di động')}>
+        <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
+        <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('Bookings', 'Lịch đặt')}</NavigationLink>
+        <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>
+        <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>
+        {session ? <button type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
       </nav>
     </div>
   );
@@ -78,7 +82,8 @@ function renderRoute(
   navigate: (to: string, replace?: boolean) => void,
   openLogin: (returnTo: string) => void,
   setSession: (session: AuthenticationResponse | null) => void,
-  session: AuthenticationResponse | null
+  session: AuthenticationResponse | null,
+  t: (english: string, vietnamese: string) => string
 ): JSX.Element {
   if (route.name === 'discovery') {
     const area = route.search.get('area')?.trim() ?? 'D1';
@@ -102,14 +107,14 @@ function renderRoute(
   }
 
   if (route.name === 'bookings') return <MyBookingsPage onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
-  if (route.name === 'owner') return <OwnerConsolePage onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
-  if (route.name === 'admin') return <AdminConsolePage onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  if (route.name === 'owner') return <OwnerConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  if (route.name === 'admin') return <AdminConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   if (route.name === 'professional-onboarding') return <ProfessionalOnboardingPage initialSession={session} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   if (route.name === 'login') {
     const returnTo = safeReturnTo(route.search.get('returnTo'));
     return <LoginPage destination={destinationFor(returnTo)} onAuthenticated={(nextSession, registrationIntent) => { setSession(nextSession); navigate(registrationIntent === 'PROFESSIONAL' ? '/professional/onboarding' : registrationIntent === 'OWNER' ? '/owner' : returnTo, true); }} onBack={() => navigate('/')} />;
   }
-  return <main className="page-shell"><h1>Page not found</h1><p className="lead">This link does not point to an available Salon Spot page.</p><button type="button" onClick={() => navigate('/')}>Return to explore</button></main>;
+  return <main className="page-shell"><h1>{t('Page not found', 'Không tìm thấy trang')}</h1><p className="lead">{t('This link does not point to an available Salon Spot page.', 'Liên kết này không dẫn đến một trang hiện có của Salon Spot.')}</p><button type="button" onClick={() => navigate('/')}>{t('Return to explore', 'Quay lại khám phá')}</button></main>;
 }
 
 function readRoute(): Route {
