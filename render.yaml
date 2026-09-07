@@ -8,8 +8,6 @@ services:
     autoDeploy: false
     dockerfilePath: ./infra/Dockerfile.render-api
     dockerContext: .
-    dockerCommand: >-
-      sh -ec './apps/api/node_modules/.bin/prisma migrate deploy --schema apps/api/prisma/schema.prisma && exec node apps/api/dist/main.js'
     healthCheckPath: /api/v1/health/ready
     envVars:
       - key: NODE_ENV

@@ -31,4 +31,6 @@ COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/packages/contracts ./packages/contracts
 COPY --from=build /app/package.json ./package.json
-CMD ["node", "apps/api/dist/main.js"]
+COPY infra/scripts/render-api-start.sh /usr/local/bin/render-api-start
+RUN chmod 0555 /usr/local/bin/render-api-start
+CMD ["/usr/local/bin/render-api-start"]
