@@ -12,6 +12,7 @@ import { BookingsModule } from './modules/bookings/bookings.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
 import { DiscoveryModule } from './modules/discovery/discovery.module.js';
 import { MediaModule } from './modules/media/media.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { ProfessionalsModule } from './modules/professionals/professionals.module.js';
 import { SalonsModule } from './modules/salons/salons.module.js';
@@ -32,6 +33,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     BookingsModule,
     PaymentsModule,
     MediaModule,
+    NotificationsModule,
     ChatModule,
     AdminModule,
     DiscoveryModule

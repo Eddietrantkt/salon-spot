@@ -58,10 +58,17 @@ export class BookingsService {
   }
 
   async getMineById(actorUserId: string, bookingId: string): Promise<BookingDetailResponse> {
-    await this.professionals.assertActive(actorUserId);
-    const booking = await this.prisma.booking.findFirst({ where: { id: bookingId, professionalUserId: actorUserId } });
+    const booking = await this.prisma.booking.findFirst({
+      where: {
+        id: bookingId,
+        OR: [
+          { professionalUserId: actorUserId },
+          { slot: { workspace: { salon: { memberships: { some: { userId: actorUserId } } } } } }
+        ]
+      }
+    });
     if (!booking) throw new NotFoundException('Booking was not found.');
-    return { booking: toSummary(booking) };
+    return { booking: toSummary(booking), viewerCanCancel: booking.professionalUserId === actorUserId };
   }
 
   async cancel(actorUserId: string, bookingId: string, idempotencyKey: string, requestId?: string): Promise<CancelBookingResponse> {

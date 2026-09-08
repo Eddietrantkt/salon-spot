@@ -8,16 +8,18 @@ import { ProfessionalGuard } from '../../professionals/presentation/professional
 import { BookingsService } from '../application/bookings.service.js';
 
 @Controller()
-@UseGuards(AccessTokenGuard, ProfessionalGuard)
+@UseGuards(AccessTokenGuard)
 export class BookingsController {
   constructor(private readonly bookings: BookingsService) {}
 
   @Post('holds/:holdId/confirm')
+  @UseGuards(ProfessionalGuard)
   confirm(@Param('holdId') holdId: string, @CurrentUser() user: AuthenticatedUser, @Headers('idempotency-key') idempotencyKey: string | string[] | undefined, @RequestId() requestId?: string): Promise<ConfirmHoldResponse> {
     return this.bookings.confirm(user.id, holdId, requireIdempotencyKey(idempotencyKey), requestId);
   }
 
   @Get('me/bookings')
+  @UseGuards(ProfessionalGuard)
   getMine(@CurrentUser() user: AuthenticatedUser): Promise<MyBookingsResponse> {
     return this.bookings.getMine(user.id);
   }
@@ -28,6 +30,7 @@ export class BookingsController {
   }
 
   @Post('bookings/:bookingId/cancel')
+  @UseGuards(ProfessionalGuard)
   cancel(@Param('bookingId') bookingId: string, @CurrentUser() user: AuthenticatedUser, @Headers('idempotency-key') idempotencyKey: string | string[] | undefined, @RequestId() requestId?: string): Promise<CancelBookingResponse> {
     return this.bookings.cancel(user.id, bookingId, requireIdempotencyKey(idempotencyKey), requestId);
   }

@@ -102,6 +102,28 @@ enum OutboxStatus {
   FAILED
 }
 
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_COMPLETED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+enum NotificationLocale {
+  EN
+  VI
+}
+
 model User {
   id                              String                         @id @default(cuid()) @db.VarChar(30)
   email                           String                         @unique @db.VarChar(320)
@@ -119,6 +141,8 @@ model User {
   professionalProfile             ProfessionalProfile?
   passwordResetTokens             PasswordResetToken[]
   professionalVerificationReviews ProfessionalVerificationCase[] @relation("ProfessionalVerificationReviewer")
+  notifications                   Notification[]
+  notificationPreference          NotificationPreference?
 }
 
 /**
@@ -485,4 +509,60 @@ model OutboxEvent {
   createdAt   DateTime     @default(now()) @db.DateTime(3)
 
   @@index([status, availableAt])
+}
+
+/**
+ * User-facing inbox item materialized from an already committed domain event.
+ */
+model Notification {
+  id              String                 @id @default(cuid()) @db.VarChar(30)
+  sourceEventId   String                 @db.VarChar(30)
+  recipientUserId String                 @db.VarChar(30)
+  type            NotificationType
+  titleKey        String                 @db.VarChar(120)
+  bodyKey         String                 @db.VarChar(120)
+  payload         Json
+  entityType      String                 @db.VarChar(80)
+  entityId        String                 @db.VarChar(30)
+  readAt          DateTime?              @db.DateTime(3)
+  expiresAt       DateTime?              @db.DateTime(3)
+  createdAt       DateTime               @default(now()) @db.DateTime(3)
+  recipient       User                   @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+  deliveries      NotificationDelivery[]
+
+  @@unique([sourceEventId, recipientUserId, type], map: "Notification_source_recipient_type_key")
+  @@index([recipientUserId, readAt, createdAt], map: "Notification_recipient_read_created_idx")
+  @@index([entityType, entityId])
+}
+
+/**
+ * In-app transactional notifications are mandatory; these fields govern optional delivery.
+ */
+model NotificationPreference {
+  userId           String             @id @db.VarChar(30)
+  locale           NotificationLocale @default(EN)
+  emailEnabled     Boolean            @default(true)
+  marketingEnabled Boolean            @default(false)
+  updatedAt        DateTime           @updatedAt @db.DateTime(3)
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * Per-channel delivery state. IN_APP is delivered atomically with the inbox item.
+ */
+model NotificationDelivery {
+  id             String                     @id @default(cuid()) @db.VarChar(30)
+  notificationId String                     @db.VarChar(30)
+  channel        NotificationChannel
+  status         NotificationDeliveryStatus @default(PENDING)
+  attempts       Int                        @default(0)
+  availableAt    DateTime                   @default(now()) @db.DateTime(3)
+  deliveredAt    DateTime?                  @db.DateTime(3)
+  lastError      String?                    @db.VarChar(500)
+  createdAt      DateTime                   @default(now()) @db.DateTime(3)
+  updatedAt      DateTime                   @updatedAt @db.DateTime(3)
+  notification   Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, channel])
+  @@index([channel, status, availableAt])
 }

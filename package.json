@@ -5,6 +5,7 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test && pnpm test:deployment-config",
+    "test:notifications": "pnpm --filter @salon-spot/api exec jest --runInBand --runTestsByPath src/common/worker/notification-worker.service.spec.ts src/modules/notifications/application/notification-outbox.processor.spec.ts src/modules/notifications/application/notifications.service.spec.ts test/notifications-http-contract.spec.ts && pnpm --filter @salon-spot/web exec node --test test/notification-copy.test.ts",
     "test:deployment-config": "node --test test/vercel-routing.test.mjs",
     "typecheck": "pnpm -r --if-present run typecheck",
     "lint": "pnpm -r --if-present run lint",
@@ -14,7 +15,8 @@
     "p1:mysql": "node scripts/p1/run-mysql-e2e.mjs",
     "p1:runtime-smoke": "node scripts/p1/runtime-smoke.mjs",
     "p1:backup-restore": "node scripts/p1/backup-restore-rehearsal.mjs",
-    "p1:browser": "node scripts/p1/browser-uat.mjs"
+    "p1:browser": "node scripts/p1/browser-uat.mjs",
+    "p1:notifications:browser": "node scripts/p1/notification-browser-qa.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.57.0"

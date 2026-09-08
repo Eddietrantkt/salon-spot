@@ -1,22 +1,26 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
-import { BookingsService } from '../../modules/bookings/application/bookings.service.js';
+import { NotificationOutboxProcessor } from '../../modules/notifications/application/notification-outbox.processor.js';
 import { WorkerHealthService } from './worker-health.service.js';
 import { WorkerRuntimeHealthService, secondsFromEnv } from './worker-runtime-health.service.js';
 
 @Injectable()
-export class BookingLifecycleWorkerService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(BookingLifecycleWorkerService.name);
+export class NotificationWorkerService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(NotificationWorkerService.name);
   private timer?: NodeJS.Timeout;
   private running = false;
   private stopping = false;
   private currentTick?: Promise<void>;
 
-  constructor(private readonly bookings: BookingsService, private readonly health: WorkerHealthService, @Optional() private readonly runtime?: WorkerRuntimeHealthService) {}
+  constructor(
+    private readonly notifications: NotificationOutboxProcessor,
+    private readonly health: WorkerHealthService,
+    @Optional() private readonly runtime?: WorkerRuntimeHealthService
+  ) {}
 
   onModuleInit(): void {
     this.scheduleTick();
     this.timer = setInterval(() => this.scheduleTick(), secondsFromEnv('WORKER_TICK_INTERVAL_SECONDS', 5) * 1_000);
-    this.logger.log('Booking lifecycle worker is registered.');
+    this.logger.log('Notification delivery worker is registered.');
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -34,19 +38,19 @@ export class BookingLifecycleWorkerService implements OnModuleInit, OnModuleDest
   private async tick(): Promise<void> {
     if (this.stopping || this.running) return;
     this.running = true;
-    this.runtime?.beginBatch('booking-lifecycle');
+    this.runtime?.beginBatch('notification-delivery');
     const startedAt = Date.now();
     try {
-      const completedCount = await this.bookings.completeEndedBookings();
-      await this.health.recordSuccess('booking-lifecycle');
-      this.logger.log(JSON.stringify({ service: 'worker', worker: 'booking-lifecycle', event: 'batch_succeeded', completedCount, durationMs: Date.now() - startedAt }));
+      const deliveredCount = await this.notifications.processBatch();
+      await this.health.recordSuccess('notification-delivery');
+      this.logger.log(JSON.stringify({ service: 'worker', worker: 'notification-delivery', event: 'batch_succeeded', deliveredCount, durationMs: Date.now() - startedAt }));
     } catch (error) {
-      this.runtime?.recordFailure('booking-lifecycle');
-      await this.health.recordFailure('booking-lifecycle', error).catch((heartbeatError: unknown) => this.logger.error('Unable to record worker heartbeat.', heartbeatError instanceof Error ? heartbeatError.stack : undefined));
-      this.logger.error(JSON.stringify({ service: 'worker', worker: 'booking-lifecycle', event: 'batch_failed', durationMs: Date.now() - startedAt, error: error instanceof Error ? error.message : 'Unknown error' }));
+      this.runtime?.recordFailure('notification-delivery');
+      await this.health.recordFailure('notification-delivery', error).catch((heartbeatError: unknown) => this.logger.error('Unable to record worker heartbeat.', heartbeatError instanceof Error ? heartbeatError.stack : undefined));
+      this.logger.error(JSON.stringify({ service: 'worker', worker: 'notification-delivery', event: 'batch_failed', durationMs: Date.now() - startedAt, error: error instanceof Error ? error.message : 'Unknown error' }));
     } finally {
       this.running = false;
-      this.runtime?.endBatch('booking-lifecycle');
+      this.runtime?.endBatch('notification-delivery');
     }
   }
 

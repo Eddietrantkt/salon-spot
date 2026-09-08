@@ -93,7 +93,7 @@ describeMySql('P1 HTTP BOLA and session revocation on MySQL', () => {
     await expect(prisma.workspace.count({ where: { salonId: salonB } })).resolves.toBe(before);
   });
 
-  it('allows only an ACTIVE Professional to hold and leaves no hold for PENDING', async () => {
+  it('allows only an ACTIVE Professional to hold and exposes its booking detail only to the Professional and Salon Owner', async () => {
     const pending = await fetch(`${baseUrl}/availability/slots/${slotB}/holds`, { method: 'POST', headers: { ...authorization(pendingProfessional, `p1-pending-${suffix}@example.test`), 'idempotency-key': 'pending-hold' } });
     expect(pending.status).toBe(403);
     await expect(prisma.slotHold.count({ where: { availabilitySlotId: slotB } })).resolves.toBe(0);
@@ -101,6 +101,19 @@ describeMySql('P1 HTTP BOLA and session revocation on MySQL', () => {
     const active = await fetch(`${baseUrl}/availability/slots/${slotB}/holds`, { method: 'POST', headers: { ...authorization(activeProfessional, `p1-active-${suffix}@example.test`), 'idempotency-key': 'active-hold' } });
     expect(active.status).toBe(201);
     await expect(prisma.slotHold.count({ where: { availabilitySlotId: slotB, professionalUserId: activeProfessional } })).resolves.toBe(1);
+    const hold = (await active.json() as { hold: { id: string } }).hold;
+    const confirmed = await fetch(`${baseUrl}/holds/${hold.id}/confirm`, { method: 'POST', headers: { ...authorization(activeProfessional, `p1-active-${suffix}@example.test`), 'idempotency-key': 'active-confirm' } });
+    expect(confirmed.status).toBe(201);
+    const bookingId = (await confirmed.json() as { booking: { id: string } }).booking.id;
+
+    const professionalDetail = await fetch(`${baseUrl}/me/bookings/${bookingId}`, { headers: authorization(activeProfessional, `p1-active-${suffix}@example.test`) });
+    expect(professionalDetail.status).toBe(200);
+    await expect(professionalDetail.json()).resolves.toMatchObject({ booking: { id: bookingId }, viewerCanCancel: true });
+    const ownerDetail = await fetch(`${baseUrl}/me/bookings/${bookingId}`, { headers: authorization(ownerB, `p1-owner-b-${suffix}@example.test`) });
+    expect(ownerDetail.status).toBe(200);
+    await expect(ownerDetail.json()).resolves.toMatchObject({ booking: { id: bookingId }, viewerCanCancel: false });
+    const unrelatedOwner = await fetch(`${baseUrl}/me/bookings/${bookingId}`, { headers: authorization(ownerA, `p1-owner-a-${suffix}@example.test`) });
+    expect(unrelatedOwner.status).toBe(404);
   });
 
   it('suspends access and refresh sessions, and reactivation does not restore the old refresh session', async () => {

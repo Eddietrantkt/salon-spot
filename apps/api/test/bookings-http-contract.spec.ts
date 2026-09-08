@@ -28,7 +28,7 @@ const booking: BookingSummary = {
 const bookings = {
   confirm: jest.fn(async () => ({ booking })),
   getMine: jest.fn(async () => ({ bookings: [booking] })),
-  getMineById: jest.fn(async () => ({ booking })),
+  getMineById: jest.fn(async () => ({ booking, viewerCanCancel: true })),
   cancel: jest.fn(async () => ({ booking: { ...booking, status: 'CANCELLED' as const, cancelledAt: '2026-08-27T00:00:00.000Z' } }))
 };
 const professionalAccess = { assertActive: jest.fn().mockResolvedValue(undefined) };
@@ -110,7 +110,7 @@ describe('bookings HTTP contract', () => {
 
     const detail = await fetch(`${baseUrl}/me/bookings/booking_1`, { headers: authorization });
     expect(detail.status).toBe(200);
-    await expect(detail.json()).resolves.toEqual({ booking });
+    await expect(detail.json()).resolves.toEqual({ booking, viewerCanCancel: true });
     expect(bookings.getMineById).toHaveBeenCalledWith('user_1', 'booking_1');
   });
 

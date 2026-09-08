@@ -210,7 +210,7 @@ async function main() {
     evidence.http.workerReadyAfterRecovery = await waitFor('worker recovery readiness', () => workerReady(compose, isolated.file));
     const heartbeatsAfter = await waitFor('all worker heartbeats to advance', () => {
       const snapshot = heartbeatSnapshot(compose, isolated.file);
-      const names = ['hold-expiry', 'booking-lifecycle', 'media-cleanup'];
+      const names = ['hold-expiry', 'booking-lifecycle', 'notification-delivery', 'media-cleanup'];
       return names.every((name) => snapshot[name] && heartbeatsBefore[name] && Date.parse(snapshot[name]) > Date.parse(heartbeatsBefore[name])) ? snapshot : false;
     });
     evidence.heartbeats = { before: heartbeatsBefore, after: heartbeatsAfter };

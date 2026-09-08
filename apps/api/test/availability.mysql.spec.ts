@@ -7,7 +7,7 @@ import { AvailabilitySlotLockService } from '../src/modules/availability/applica
 import { SlotHoldsService } from '../src/modules/availability/application/slot-holds.service.js';
 import { BookingsService } from '../src/modules/bookings/application/bookings.service.js';
 import { ProfessionalAccessService } from '../src/modules/professionals/application/professional-access.service.js';
-import { BookingNotificationOutboxService } from '../src/modules/bookings/application/booking-notification-outbox.service.js';
+import { NotificationOutboxProcessor } from '../src/modules/notifications/application/notification-outbox.processor.js';
 import { MediaCleanupService } from '../src/modules/media/application/media-cleanup.service.js';
 import { OwnerMediaService } from '../src/modules/media/application/owner-media.service.js';
 
@@ -217,10 +217,42 @@ describeMySql('OwnerAvailabilityService MySQL concurrency', () => {
     expect(events.filter((event) => (event.payload as { bookingId?: string }).bookingId === confirmed.booking.id)).toHaveLength(1);
   }, 30_000);
 
-  it('reclaims one expired outbox lease after a simulated worker restart', async () => {
-    const event = await prisma.outboxEvent.create({ data: { topic: 'BOOKING_CONFIRMED', payload: { bookingId: `lease-${suffix}` }, status: OutboxStatus.PROCESSING, attempts: 1, availableAt: new Date(Date.now() - 1_000) } });
-    await expect(new BookingNotificationOutboxService(prisma).processBatch()).resolves.toBeGreaterThanOrEqual(1);
+  it('reclaims one expired notification lease and materializes recipients without duplicates', async () => {
+    const booking = await prisma.booking.findFirstOrThrow({ where: { professionalUserId: professionalAId }, orderBy: { createdAt: 'asc' } });
+    const events = await prisma.outboxEvent.findMany({ where: { topic: 'BOOKING_CONFIRMED' } });
+    const event = events.find((candidate) => (candidate.payload as { bookingId?: string }).bookingId === booking.id);
+    if (!event) throw new Error('Expected a booking confirmation outbox event from the earlier concurrency case.');
+    await prisma.outboxEvent.update({ where: { id: event.id }, data: { status: OutboxStatus.PROCESSING, attempts: 1, availableAt: new Date(Date.now() - 1_000) } });
+    const processor = new NotificationOutboxProcessor(prisma);
+    await expect(processor.processBatch()).resolves.toBeGreaterThanOrEqual(1);
     await expect(prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } })).resolves.toMatchObject({ status: OutboxStatus.DELIVERED, attempts: 2 });
+    await expect(prisma.notification.count({ where: { sourceEventId: event.id } })).resolves.toBe(2);
+
+    await prisma.outboxEvent.update({ where: { id: event.id }, data: { status: OutboxStatus.PROCESSING, availableAt: new Date(Date.now() - 1_000) } });
+    await expect(processor.processBatch()).resolves.toBeGreaterThanOrEqual(1);
+    await expect(prisma.notification.count({ where: { sourceEventId: event.id } })).resolves.toBe(2);
+    await expect(prisma.notificationDelivery.count({ where: { notification: { sourceEventId: event.id } } })).resolves.toBe(2);
+  }, 30_000);
+
+  it('materializes all supported booking event types once under concurrent processors', async () => {
+    const booking = await prisma.booking.findFirstOrThrow({ where: { professionalUserId: professionalAId } });
+    const topics = ['BOOKING_CONFIRMED', 'BOOKING_CANCELLED', 'BOOKING_COMPLETED'];
+    const events = await Promise.all(topics.map((topic) => prisma.outboxEvent.create({
+      data: { topic, payload: { bookingId: booking.id } }
+    })));
+    const processor = new NotificationOutboxProcessor(prisma);
+    await Promise.all([processor.processBatch(), processor.processBatch()]);
+    for (const event of events) {
+      const notifications = await prisma.notification.findMany({ where: { sourceEventId: event.id }, include: { deliveries: true } });
+      expect(notifications).toHaveLength(2);
+      expect(new Set(notifications.map((item) => item.recipientUserId))).toEqual(new Set([userId, professionalAId]));
+      for (const item of notifications) {
+        expect(item.type).toBe(event.topic);
+        expect(item.deliveries).toHaveLength(1);
+        expect(item.deliveries[0]).toMatchObject({ channel: 'IN_APP', status: 'DELIVERED' });
+      }
+      expect(await prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } })).toMatchObject({ status: 'DELIVERED' });
+    }
   }, 30_000);
 
   it('serializes concurrent media upload intents at the active-media cap', async () => {

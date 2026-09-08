@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AvailabilityModule } from '../availability/availability.module.js';
 import { ProfessionalsModule } from '../professionals/professionals.module.js';
-import { BookingNotificationOutboxService } from './application/booking-notification-outbox.service.js';
 import { BookingsService } from './application/bookings.service.js';
 import { BookingsController } from './presentation/bookings.controller.js';
 
@@ -9,7 +8,7 @@ import { BookingsController } from './presentation/bookings.controller.js';
 @Module({
   imports: [AvailabilityModule, ProfessionalsModule],
   controllers: [BookingsController],
-  providers: [BookingsService, BookingNotificationOutboxService],
-  exports: [BookingsService, BookingNotificationOutboxService]
+  providers: [BookingsService],
+  exports: [BookingsService]
 })
 export class BookingsModule {}

@@ -6,6 +6,8 @@ This repository contains the active web, API and database implementation for the
 
 Implemented now: pnpm workspace, MySQL 8.4/Prisma, NestJS modular monolith, React/Vite mobile-first web, JWT access/refresh sessions, Salon-scoped Owner BOLA, separate `AdminAccess`, explicit `ProfessionalProfile`, additive Professional verification/private-document and role-agnostic password-reset persistence, Owner supply/media/publish, fixed availability, and the full no-payment booking lifecycle: detail → hold → confirm → cancel/complete.
 
+The web interface defaults to English and includes an `EN / VI` language control. A user's Vietnamese selection is stored in the browser and restored on later visits; this preference changes presentation only and does not alter API contracts or persisted business data.
+
 Only an `ACTIVE` Professional profile may currently hold, confirm, read or cancel its own booking. Professional registration creates a `PENDING` profile and authenticated users can complete basic profile fields through `/professionals/me`; verification/credential records remain intentionally unenforced until private evidence, Admin review and legacy-account rollout are complete. Owner membership and Admin access never grant booking authority by themselves. Bookings snapshot the Salon IANA timezone and local calendar date as well as their UTC start/end instants, so history is rendered in the Salon timezone. Payment, chat, Manager, rescheduling and a real email provider remain out of scope.
 
 ## Local startup

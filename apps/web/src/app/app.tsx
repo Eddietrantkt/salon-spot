@@ -7,12 +7,15 @@ import { OwnerConsolePage } from '../features/owner/pages/owner-console-page';
 import { AdminConsolePage } from '../features/admin/pages/admin-console-page';
 import { LoginPage, type LoginDestination } from '../features/auth/pages/login-page';
 import { ProfessionalOnboardingPage } from '../features/professionals/pages/professional-onboarding-page';
+import { NotificationsPage } from '../features/notifications/pages/notifications-page';
+import { getNotificationUnreadCount } from '../features/notifications/api/notifications-api';
+import { notificationTargetPath } from '../features/notifications/notification-copy';
 import { logout } from '../features/auth/api/auth-api';
 import { tomorrowInLocalCalendar } from '../shared/date/local-date';
 import { LanguageSwitcher } from '../shared/i18n/language-switcher';
 import { useI18n } from '../shared/i18n/i18n-provider';
 
-type RouteName = 'discovery' | 'workspace' | 'bookings' | 'owner' | 'admin' | 'professional-onboarding' | 'login' | 'not-found';
+type RouteName = 'discovery' | 'workspace' | 'bookings' | 'notifications' | 'owner' | 'admin' | 'professional-onboarding' | 'login' | 'not-found';
 
 interface Route {
   name: RouteName;
@@ -25,12 +28,22 @@ export function App(): JSX.Element {
   const { t } = useI18n();
   const [route, setRoute] = useState<Route>(readRoute);
   const [session, setSession] = useState<AuthenticationResponse | null>(null);
+  const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
 
   useEffect(() => {
     const onPopState = () => setRoute(readRoute());
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  useEffect(() => {
+    if (!session) { setNotificationUnreadCount(0); return; }
+    let active = true;
+    void getNotificationUnreadCount(session.accessToken)
+      .then((response) => { if (active) setNotificationUnreadCount(response.unreadCount); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [session]);
 
   function navigate(to: string, replace = false): void {
     const next = normalizeInternalPath(to);
@@ -45,11 +58,12 @@ export function App(): JSX.Element {
 
   async function signOut(): Promise<void> {
     try { await logout(); }
-    finally { setSession(null); navigate('/'); }
+    finally { setSession(null); setNotificationUnreadCount(0); navigate('/'); }
   }
 
   const currentPath = `${route.pathname}${window.location.search}`;
-  const content = renderRoute(route, currentPath, navigate, openLogin, setSession, session, t);
+  const content = renderRoute(route, currentPath, navigate, openLogin, setSession, session, setNotificationUnreadCount, t);
+  const notificationLabel = `${t('Notifications', 'Thông báo')}${notificationUnreadCount > 0 ? ` (${notificationUnreadCount > 99 ? '99+' : notificationUnreadCount})` : ''}`;
 
   return (
     <div className="app-frame">
@@ -58,6 +72,7 @@ export function App(): JSX.Element {
         <nav className="app-nav" aria-label={t('Primary navigation', 'Điều hướng chính')}>
           <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
           <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('My bookings', 'Lịch đặt của tôi')}</NavigationLink>
+          <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationLabel}</NavigationLink>
           <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>
           <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>
           {session ? <div className="account-status"><span aria-live="polite">{t('Hi', 'Xin chào')}, {session.user.displayName}</span><button className="text-button" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
@@ -68,6 +83,7 @@ export function App(): JSX.Element {
       <nav className="mobile-nav" aria-label={t('Mobile navigation', 'Điều hướng di động')}>
         <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
         <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('Bookings', 'Lịch đặt')}</NavigationLink>
+        <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationUnreadCount > 0 ? `🔔 ${notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}` : '🔔'}</NavigationLink>
         <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>
         <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>
         {session ? <button type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
@@ -83,6 +99,7 @@ function renderRoute(
   openLogin: (returnTo: string) => void,
   setSession: (session: AuthenticationResponse | null) => void,
   session: AuthenticationResponse | null,
+  setNotificationUnreadCount: (count: number) => void,
   t: (english: string, vietnamese: string) => string
 ): JSX.Element {
   if (route.name === 'discovery') {
@@ -106,7 +123,8 @@ function renderRoute(
     return <WorkspaceBookingPage workspaceId={route.workspaceId} date={date} onBack={() => navigate(returnTo)} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   }
 
-  if (route.name === 'bookings') return <MyBookingsPage onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  if (route.name === 'bookings') return <MyBookingsPage focusBookingId={route.search.get('bookingId') ?? undefined} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  if (route.name === 'notifications') return <NotificationsPage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} onUnreadCountChange={setNotificationUnreadCount} onOpenNotification={(notification) => navigate(notificationTargetPath(notification))} />;
   if (route.name === 'owner') return <OwnerConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   if (route.name === 'admin') return <AdminConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   if (route.name === 'professional-onboarding') return <ProfessionalOnboardingPage initialSession={session} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
@@ -122,6 +140,7 @@ function readRoute(): Route {
   const search = new URLSearchParams(window.location.search);
   if (pathname === '/') return { name: 'discovery', pathname, search };
   if (pathname === '/bookings') return { name: 'bookings', pathname, search };
+  if (pathname === '/notifications') return { name: 'notifications', pathname, search };
   if (pathname === '/owner') return { name: 'owner', pathname, search };
   if (pathname === '/admin') return { name: 'admin', pathname, search };
   if (pathname === '/professional/onboarding') return { name: 'professional-onboarding', pathname, search };
@@ -142,7 +161,8 @@ function normalizeInternalPath(value: string): string {
 
 function destinationFor(returnTo: string): LoginDestination {
   if (returnTo.startsWith('/workspaces/')) return 'booking';
-  if (returnTo === '/bookings') return 'my-bookings';
+  if (returnTo.startsWith('/bookings')) return 'my-bookings';
+  if (returnTo === '/notifications') return 'my-bookings';
   if (returnTo === '/owner') return 'owner';
   if (returnTo === '/admin') return 'admin';
   return 'explore';

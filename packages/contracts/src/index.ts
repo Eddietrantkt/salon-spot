@@ -161,10 +161,52 @@ export interface MyBookingsResponse {
 
 export interface BookingDetailResponse {
   booking: BookingSummary;
+  /** Only the Professional who created the booking may cancel it. */
+  viewerCanCancel: boolean;
 }
 
 export interface CancelBookingResponse {
   booking: BookingSummary;
+}
+
+export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'BOOKING_COMPLETED';
+export type NotificationReadStatus = 'read' | 'unread';
+
+export interface NotificationItem {
+  id: string;
+  type: NotificationType;
+  titleKey: string;
+  bodyKey: string;
+  payload: Record<string, string>;
+  entityType: string;
+  entityId: string;
+  readAt: string | null;
+  createdAt: string;
+  expiresAt: string | null;
+}
+
+export type NotificationsResponse = PaginatedResponse<NotificationItem>;
+
+export interface NotificationUnreadCountResponse {
+  unreadCount: number;
+}
+
+export interface MarkAllNotificationsReadResponse extends NotificationUnreadCountResponse {
+  updatedCount: number;
+}
+
+export interface NotificationPreferences {
+  locale: 'EN' | 'VI';
+  emailEnabled: boolean;
+  marketingEnabled: boolean;
+  /** Transactional in-app delivery is mandatory and cannot be disabled. */
+  transactionalInAppEnabled: true;
+}
+
+export interface UpdateNotificationPreferencesInput {
+  locale?: 'EN' | 'VI';
+  emailEnabled?: boolean;
+  marketingEnabled?: boolean;
 }
 
 export type AdminUserStatus = 'ACTIVE' | 'SUSPENDED';
@@ -181,7 +223,7 @@ export interface AdminOverviewResponse {
 }
 
 export interface AdminWorkerHealth {
-  name: 'hold-expiry' | 'booking-lifecycle' | 'media-cleanup';
+  name: 'hold-expiry' | 'booking-lifecycle' | 'notification-delivery' | 'media-cleanup';
   status: 'HEALTHY' | 'STALE' | 'FAILED' | 'UNKNOWN';
   lastSucceededAt: string | null;
   lastFailedAt: string | null;

@@ -47,10 +47,15 @@ export async function putJson<T>(path: string, body: unknown, accessToken: strin
   });
 }
 
-export async function patchJson<T>(path: string, body: unknown, accessToken: string): Promise<T> {
+export async function patchJson<T>(path: string, body: unknown, accessToken: string, idempotencyKey?: string): Promise<T> {
   return requestJson<T>(path, {
     method: 'PATCH',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {})
+    },
     body: JSON.stringify(body)
   });
 }

@@ -1,0 +1,83 @@
+name: ARM64 container gate
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - compose.production.yaml
+      - infra/nginx.production.conf
+      - apps/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/arm64-container-gate.yml
+  push:
+    branches: [master]
+    paths:
+      - Dockerfile
+      - compose.production.yaml
+      - infra/nginx.production.conf
+      - apps/**
+      - packages/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/arm64-container-gate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux-arm64:
+    name: Build Linux ARM64 runtime images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable ARM64 emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - name: Configure image builder
+        uses: docker/setup-buildx-action@v3
+      - name: Prepare ARM64 evidence directory
+        run: mkdir -p artifacts/arm64
+      - name: Build API and Prisma runtime for Linux ARM64
+        id: build-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: api-runtime
+          platforms: linux/arm64
+          tags: salon-spot-api:arm64-ci
+          outputs: type=oci,dest=/tmp/salon-spot-api-arm64.oci.tar
+          cache-from: type=gha,scope=salon-spot-arm64
+          cache-to: type=gha,mode=max,scope=salon-spot-arm64
+      - name: Build web proxy runtime for Linux ARM64
+        id: build-web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web-runtime
+          platforms: linux/arm64
+          tags: salon-spot-web:arm64-ci
+          outputs: type=oci,dest=/tmp/salon-spot-web-arm64.oci.tar
+          cache-from: type=gha,scope=salon-spot-arm64
+          cache-to: type=gha,mode=max,scope=salon-spot-arm64
+      - name: Record ARM64 image digests
+        env:
+          API_IMAGE_DIGEST: ${{ steps.build-api.outputs.digest }}
+          API_IMAGE_METADATA: ${{ steps.build-api.outputs.metadata }}
+          WEB_IMAGE_DIGEST: ${{ steps.build-web.outputs.digest }}
+          WEB_IMAGE_METADATA: ${{ steps.build-web.outputs.metadata }}
+        run: |
+          node -e "const fs = require('node:fs'); const read = (name) => { const key = name.toUpperCase() + '_IMAGE'; const digest = process.env[key + '_DIGEST']; if (!digest || !digest.startsWith('sha256:')) throw new Error(name + ' image digest was not emitted'); return { platform: 'linux/arm64', digest, metadata: JSON.parse(process.env[key + '_METADATA'] || '{}') }; }; fs.writeFileSync('artifacts/arm64/image-digests.json', JSON.stringify({ api: read('api'), web: read('web') }, null, 2) + '\\n');"
+          sha256sum /tmp/salon-spot-api-arm64.oci.tar /tmp/salon-spot-web-arm64.oci.tar > artifacts/arm64/oci-archive-sha256.txt
+      - name: Upload ARM64 build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-container-evidence-${{ github.run_id }}
+          if-no-files-found: error
+          path: artifacts/arm64/

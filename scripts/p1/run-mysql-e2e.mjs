@@ -16,4 +16,4 @@ if (!process.env.DATABASE_URL) {
 const env = { ...process.env, RUN_MYSQL_E2E: '1' };
 run('pnpm', ['prisma:generate'], env);
 run('pnpm', ['--filter', '@salon-spot/api', 'exec', 'prisma', 'migrate', 'deploy', '--schema', 'prisma/schema.prisma'], env);
-run('pnpm', ['--filter', '@salon-spot/api', 'test', '--runTestsByPath', 'test/availability.mysql.spec.ts', 'test/professional-identity.mysql.spec.ts', 'test/p1-http-bola.mysql.spec.ts'], env);
+run('pnpm', ['--filter', '@salon-spot/api', 'test', '--runTestsByPath', 'test/availability.mysql.spec.ts', 'test/professional-identity.mysql.spec.ts', 'test/p1-http-bola.mysql.spec.ts', 'test/notifications.mysql.spec.ts', 'test/notifications-inbox.mysql.spec.ts'], env);

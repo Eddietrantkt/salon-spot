@@ -74,6 +74,20 @@ describe('BookingsService', () => {
     }));
     expect(tx.outboxEvent.create).toHaveBeenCalledWith({ data: { topic: 'BOOKING_COMPLETED', payload: { bookingId: 'booking_1' } } });
   });
+
+  it('returns one booking to its Professional or Salon Owner with role-safe actions', async () => {
+    const prisma = prismaHarness(transactionHarness());
+    (prisma.booking.findFirst as jest.Mock)
+      .mockResolvedValueOnce(booking())
+      .mockResolvedValueOnce(booking());
+    const service = new BookingsService(prisma, {} as AvailabilitySlotLockService, activeProfessional());
+
+    await expect(service.getMineById('professional_1', 'booking_1')).resolves.toMatchObject({ viewerCanCancel: true });
+    await expect(service.getMineById('owner_1', 'booking_1')).resolves.toMatchObject({ viewerCanCancel: false });
+    expect(prisma.booking.findFirst).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: expect.objectContaining({ id: 'booking_1', OR: expect.any(Array) })
+    }));
+  });
 });
 
 function heldSlot() {
@@ -101,5 +115,5 @@ function transactionHarness() {
 }
 
 function prismaHarness(tx: ReturnType<typeof transactionHarness>) {
-  return { idempotencyRecord: { findUnique: jest.fn().mockResolvedValue(null) }, $transaction: jest.fn((work: (client: typeof tx) => unknown) => work(tx)), booking: { findMany: jest.fn().mockResolvedValue([]) } } as unknown as PrismaService;
+  return { idempotencyRecord: { findUnique: jest.fn().mockResolvedValue(null) }, $transaction: jest.fn((work: (client: typeof tx) => unknown) => work(tx)), booking: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn() } } as unknown as PrismaService;
 }

@@ -3,6 +3,8 @@ dist/
 .env
 .env.runtime
 .env.runtime.*
+.env.production
+secrets/
 .tmp_doc_review/
 coverage/
 .data/

@@ -26,6 +26,7 @@ describe('WorkerRuntimeHealthService', () => {
     expect(health.snapshot().ready).toBe(false);
     health.recordSuccess('hold-expiry');
     health.recordSuccess('booking-lifecycle');
+    health.recordSuccess('notification-delivery');
     health.recordSuccess('media-cleanup');
     expect(health.snapshot().ready).toBe(true);
   });
@@ -34,9 +35,10 @@ describe('WorkerRuntimeHealthService', () => {
     const health = new WorkerRuntimeHealthService();
     health.recordSuccess('hold-expiry');
     health.recordSuccess('booking-lifecycle');
+    health.recordSuccess('notification-delivery');
     health.recordSuccess('media-cleanup');
     jest.advanceTimersByTime(31_000);
-    expect(health.snapshot().staleJobs).toEqual(['hold-expiry', 'booking-lifecycle', 'media-cleanup']);
+    expect(health.snapshot().staleJobs).toEqual(['hold-expiry', 'booking-lifecycle', 'notification-delivery', 'media-cleanup']);
   });
 
   it('causes one non-zero termination request for stale work', () => {
