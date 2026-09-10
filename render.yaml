@@ -28,3 +28,5 @@ services:
         sync: false
       - key: MEDIA_STORAGE_ROOT
         value: /tmp/media
+      - key: RUN_WORKERS_IN_API
+        value: "true"

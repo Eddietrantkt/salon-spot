@@ -5,7 +5,7 @@ import { WorkerModule } from './common/worker/worker.module.js';
 import { secondsFromEnv } from './common/worker/worker-runtime-health.service.js';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(WorkerModule);
+  const app = await NestFactory.create(WorkerModule.register({ runJobs: true, exposeHealth: true }));
   const logger = new Logger('WorkerBootstrap');
   await app.listen(Number(process.env.WORKER_PORT ?? 3001), '127.0.0.1');
 

@@ -19,6 +19,9 @@ import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { SalonsModule } from './modules/salons/salons.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
+import { WorkerModule } from './common/worker/worker.module.js';
+
+const runWorkersInApi = process.env.RUN_WORKERS_IN_API === 'true';
 
 @Module({
   imports: [
@@ -38,7 +41,8 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     ReviewsModule,
     ChatModule,
     AdminModule,
-    DiscoveryModule
+    DiscoveryModule,
+    WorkerModule.register({ runJobs: runWorkersInApi, exposeHealth: runWorkersInApi })
   ],
   providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }]
 })

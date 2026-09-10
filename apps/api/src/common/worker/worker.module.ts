@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { AppConfigModule } from '../config/app-config.module.js';
 import { PrismaModule } from '../database/prisma/prisma.module.js';
 import { AuthModule } from '../../modules/auth/auth.module.js';
@@ -16,23 +16,41 @@ import { WorkerHealthController } from './worker-health.controller.js';
 import { WorkerWatchdogService, WORKER_EXIT } from './worker-watchdog.service.js';
 import { NotificationWorkerService } from './notification-worker.service.js';
 
+export interface WorkerModuleOptions {
+  /** Start scheduled jobs in this Nest application process. */
+  runJobs: boolean;
+  /** Expose the worker readiness endpoint in this process. */
+  exposeHealth?: boolean;
+}
+
+const workerImports = [AppConfigModule, PrismaModule, AuthModule, AvailabilityModule, BookingsModule, MediaModule, NotificationsModule];
+const workerProviders = [
+  WorkerRuntimeHealthService,
+  WorkerHealthService,
+  WorkerLifecycleService,
+  WorkerWatchdogService,
+  { provide: WORKER_EXIT, useValue: process.exit.bind(process) },
+  HoldExpiryWorkerService,
+  BookingLifecycleWorkerService,
+  NotificationWorkerService,
+  MediaCleanupWorkerService
+];
+
 /**
- * Separate process foundation for outbox delivery, expiry and provider retries.
- * Jobs are intentionally added only with their owning feature module.
+ * Worker foundation for outbox delivery, expiry and provider retries.
+ *
+ * The normal runtime uses a separate process. The Render POC can opt into
+ * running the same jobs inside the API process because its free plan has no
+ * background-worker service.
  */
-@Module({
-  imports: [AppConfigModule, PrismaModule, AuthModule, AvailabilityModule, BookingsModule, MediaModule, NotificationsModule],
-  controllers: [WorkerHealthController],
-  providers: [
-    WorkerRuntimeHealthService,
-    WorkerHealthService,
-    WorkerLifecycleService,
-    WorkerWatchdogService,
-    { provide: WORKER_EXIT, useValue: process.exit.bind(process) },
-    HoldExpiryWorkerService,
-    BookingLifecycleWorkerService,
-    NotificationWorkerService,
-    MediaCleanupWorkerService
-  ]
-})
-export class WorkerModule {}
+@Module({})
+export class WorkerModule {
+  static register(options: WorkerModuleOptions): DynamicModule {
+    return {
+      module: WorkerModule,
+      imports: options.runJobs ? workerImports : [],
+      controllers: options.exposeHealth && options.runJobs ? [WorkerHealthController] : [],
+      providers: options.runJobs ? workerProviders : []
+    };
+  }
+}

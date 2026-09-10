@@ -23,7 +23,7 @@ For D3-D4 media, also set `MEDIA_UPLOAD_SECRET`, `MEDIA_PUBLIC_BASE_URL` and `ME
 
 ## Staging/UAT Compose runtime
 
-For the single-instance packaged runtime, copy `.env.runtime.example` to `.env.runtime`, replace all placeholder secrets, and run `pnpm runtime:up`. The stack exposes the web/API proxy at `http://localhost:8080`; MySQL remains on host port `3307`. It runs `prisma migrate deploy` as a one-shot gate before API and worker, shares a named media volume between API and worker, and restarts the worker when it exits after a stale-job watchdog decision. See [the runtime operations runbook](docs/RUNTIME_OPERATIONS_RUNBOOK.md) for start/stop, health, recovery, smoke, and rollback procedures.
+For the single-instance packaged runtime, copy `.env.runtime.example` to `.env.runtime`, replace all placeholder secrets, and run `pnpm runtime:up`. The stack exposes the web/API proxy at `http://localhost:8080`; MySQL remains on host port `3307`. It runs `prisma migrate deploy` as a one-shot gate before API and the separate worker, shares a named media volume between API and worker, and restarts the worker when it exits after a stale-job watchdog decision. The Render POC sets `RUN_WORKERS_IN_API=true` because Render Free has no background-worker service; local/production-style Compose keeps the worker separate. See [the runtime operations runbook](docs/RUNTIME_OPERATIONS_RUNBOOK.md) for start/stop, health, recovery, smoke, and rollback procedures.
 
 ## Local demo data
 

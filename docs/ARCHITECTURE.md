@@ -23,7 +23,7 @@ apps/
     src/modules/payments/      # approval-dependent
     src/modules/media/         # signed PUT, verify/process/READY, cover/order/delete
     src/modules/chat/ admin/   # isolated future capabilities
-    src/worker-main.ts         # optional process dùng chung config/database
+    src/worker-main.ts         # worker process; Render POC có thể co-locate vào API
     prisma/                    # schema và migrations MySQL
 packages/
   contracts/                   # versioned DTO, error, pagination; không chứa ORM model
@@ -36,6 +36,12 @@ packages/
 `DiscoveryModule` lọc `PUBLISHED`/`OPEN`, pagination và chỉ map media `READY`. `MediaModule` sở hữu signed upload, lưu trữ local cho dev/UAT, decode/re-encode bằng `sharp`, hash/metadata, cover/order/delete và public content. Delete chỉ đổi DB sang `DELETE_PENDING` trong request; worker xử lý object rồi chuyển `DELETED`. `AvailabilityModule` sở hữu đọc/mở/block fixed slots, khóa `WorkspaceCalendarLock` theo Workspace/ngày và mọi chuyển trạng thái slot; Booking vẫn sở hữu lifecycle.
 
 `ProfessionalsModule` là boundary duy nhất cho booking capability. `ProfessionalProfile(userId)` là 1:0..1 extension của `User`; chỉ profile `ACTIVE` được phép hold, confirm, đọc hoặc hủy Booking của chính mình. `SalonMembership(OWNER)` và `AdminAccess` độc lập, không cấp quyền booking. `Booking` snapshot `salonTimezone` và `localDate` cùng với UTC `startsAt`/`endsAt`; web luôn render history theo snapshot đó, không theo timezone máy người xem.
+
+Worker jobs mặc định chạy trong `worker-main.ts` như một process riêng để có
+readiness và restart boundary độc lập. Hosted Render POC đặt
+`RUN_WORKERS_IN_API=true` để đăng ký cùng các job trong `main.ts`; đây là
+workaround cho Render Free không có Background Worker miễn phí, không phải
+topology production.
 
 Professional trust được model riêng theo ba khái niệm: `ProfessionalVerificationCase` là một vòng submit/review; `ProfessionalCredential` là license/insurance có kỳ hạn; `ProfessionalDocument` là metadata bằng chứng riêng tư. File bytes không nằm trong MySQL và không dùng public listing media. `PasswordResetToken` thuộc `User` để mọi role dùng chung recovery. Đây là schema foundation additive; guard booking hiện chưa dựa vào verification để tránh khóa tài khoản cũ trước khi có onboarding/backfill.
 

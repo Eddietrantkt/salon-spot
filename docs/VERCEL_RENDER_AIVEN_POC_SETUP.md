@@ -3,7 +3,7 @@
 ## Scope
 
 ```text
-Browser -> Vercel Vite web -> rewrite /api/* -> Render API (free)
+Browser -> Vercel Vite web -> rewrite /api/* -> Render API + worker (free POC)
                                               -> Aiven MySQL (TLS, free)
 ```
 
@@ -15,7 +15,8 @@ cookie is first-party rather than a cross-site API cookie.
 
 - `vercel.json` builds the Vite web application from the monorepo root, proxies
   `/api/*` to the Render API, and falls back to `index.html` for SPA deep links.
-- `render.yaml` defines only the free Render API web service. `autoDeploy:
+- `render.yaml` defines only the free Render API web service. The service runs
+  the scheduled worker in-process with `RUN_WORKERS_IN_API=true`. `autoDeploy:
   false` prevents an import from deploying unreviewed commits.
 - `infra/Dockerfile.render-api` is an API-specific image because Render builds
   a Dockerfile's final stage and the existing Compose Dockerfile defaults to
@@ -44,13 +45,25 @@ cookie is first-party rather than a cross-site API cookie.
    `MEDIA_PUBLIC_BASE_URL=https://<vercel-host>/api/v1`; redeploy API. Verify
    browser register/login/refresh/logout and a booking through the Vercel URL.
 
+## Worker mode
+
+The hosted POC enables `RUN_WORKERS_IN_API=true`. This starts hold expiry,
+booking lifecycle, notification outbox delivery and media cleanup in the same
+Node process as the HTTP API. It is an explicit workaround for the Render Free
+plan, which does not provide a free Background Worker service.
+
+The local/runtime Compose baseline remains the reference separation: API and
+worker use separate processes and the worker has its own readiness endpoint.
+Do not enable both modes against the same database, or two job loops will run
+at once. Lease/idempotency rules reduce duplicate delivery risk but do not make
+duplicate schedulers the preferred production topology.
+
 ## Costs and POC limitations
 
-- The Render API can use `free`, but it sleeps when idle. This $0 Blueprint
-  intentionally omits the separate worker because Render does not offer a
-  free Background Worker plan. Booking expiry, outbox processing and media
-  cleanup therefore do not run reliably; this is a UI/API preview, not a
-  complete workflow POC.
+- The Render API can use `free`, but it sleeps when idle. Co-locating the worker
+  makes outbox processing available while the service is running, but sleep,
+  restarts and shared CPU/memory still apply. This remains a UI/workflow POC,
+  not an always-on or production-ready deployment.
 - `MEDIA_STORAGE_ROOT=/tmp/media` is ephemeral on Render. Uploads can vanish
   after a restart or redeploy. R2 requires the planned S3 media adapter and is
   intentionally not enabled here.
