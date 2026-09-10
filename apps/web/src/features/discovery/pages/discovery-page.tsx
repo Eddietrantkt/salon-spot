@@ -7,6 +7,7 @@ import { WorkspaceCard } from '../components/workspace-card';
 import { tomorrowInLocalCalendar } from '../../../shared/date/local-date';
 import { useI18n } from '../../../shared/i18n/i18n-provider';
 import { localizedErrorMessage } from '../../../shared/i18n/localized-error-message';
+import { Icon } from '../../../shared/ui/icon';
 
 interface DiscoveryPageProps {
   initialArea: string;
@@ -74,19 +75,28 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
   return (
     <main className="page-shell discovery-shell">
       <header className="discovery-hero">
-        <div className="discovery-copy">
-          <p className="eyebrow">{t('THE SALON SPOT · FLEXIBLE BEAUTY SPACES', 'THE SALON SPOT · KHÔNG GIAN LÀM ĐẸP LINH HOẠT')}</p>
-          <h1>{t('Find a workspace that ', 'Tìm không gian ')}<em>{t('fits your craft.', 'phù hợp với tay nghề của bạn.')}</em></h1>
-          <p className="lead">{t('Explore professional-ready salon spaces by location and date. Availability is always confirmed by the live schedule.', 'Khám phá không gian salon chuyên nghiệp theo địa điểm và ngày. Tình trạng còn trống luôn được xác nhận theo lịch trực tiếp.')}</p>
+        <div className="discovery-hero-intro">
+          <div className="discovery-copy">
+            <p className="eyebrow">{t('THE SALON SPOT · FLEXIBLE BEAUTY SPACES', 'THE SALON SPOT · KHÔNG GIAN LÀM ĐẸP LINH HOẠT')}</p>
+            <h1>{t('Find a workspace that ', 'Tìm không gian ')}<em>{t('fits your craft.', 'phù hợp với tay nghề của bạn.')}</em></h1>
+            <p className="lead">{t('Explore professional-ready salon spaces by location and date. Availability is always confirmed by the live schedule.', 'Khám phá không gian salon chuyên nghiệp theo địa điểm và ngày. Tình trạng còn trống luôn được xác nhận theo lịch trực tiếp.')}</p>
+          </div>
+          <div className="discovery-proof-strip" aria-label={t('Explore highlights', 'Điểm nổi bật khi khám phá')}>
+            <span><strong>01</strong>{t('Live availability', 'Lịch trống trực tiếp')}</span>
+            <span><strong>02</strong>{t('Ready-to-work spaces', 'Không gian sẵn sàng làm việc')}</span>
+          </div>
+          <SearchWorkspacesForm
+            area={area}
+            date={date}
+            isLoading={isLoading}
+            onAreaChange={changeArea}
+            onDateChange={changeDate}
+            onSubmit={onSubmit}
+          />
         </div>
-        <SearchWorkspacesForm
-          area={area}
-          date={date}
-          isLoading={isLoading}
-          onAreaChange={changeArea}
-          onDateChange={changeDate}
-          onSubmit={onSubmit}
-        />
+        <div className="discovery-hero-side">
+          <DiscoveryHeroVisual t={t} />
+        </div>
       </header>
 
       {hasSearched && <div className="result-search-stick"><SearchWorkspacesForm
@@ -99,13 +109,34 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
         onDateChange={changeDate}
         onSubmit={onSubmit}
       /></div>}
-      <SearchFeedback error={error} hasSearched={hasSearched} isLoading={isLoading} hasItems={items.length > 0} onRefineSearch={refineSearch} />
+      <SearchFeedback error={error} hasSearched={hasSearched} isLoading={isLoading} hasItems={items.length > 0} onRefineSearch={refineSearch} onRetry={() => void search(area, date)} />
 
       {hasSearched && !isLoading && items.length > 0 && <header className="result-heading"><div><p className="eyebrow">{t('AVAILABLE WORKSPACES', 'KHÔNG GIAN ĐANG TRỐNG')}</p><h2>{t('Spaces for your next session', 'Không gian cho buổi làm việc tiếp theo')}</h2></div><span>{items.length} {t(items.length === 1 ? 'space' : 'spaces', 'không gian')}</span></header>}
       <section className="workspace-grid" aria-live="polite" aria-busy={isLoading}>
-        {isLoading ? <WorkspaceGridSkeleton /> : items.map((item) => <WorkspaceCard item={item} key={item.workspaceId} onSelect={(workspaceId) => onSelectWorkspace(workspaceId, area, date)} />)}
+        {isLoading ? <WorkspaceGridSkeleton /> : items.map((item, index) => <WorkspaceCard item={item} key={item.workspaceId} index={index} onSelect={(workspaceId) => onSelectWorkspace(workspaceId, area, date)} />)}
       </section>
     </main>
+  );
+}
+
+function DiscoveryHeroVisual({ t }: { t: (english: string, vietnamese: string) => string }): JSX.Element {
+  return (
+    <div className="discovery-visual" aria-hidden="true">
+      <div className="visual-orbit visual-orbit-one" />
+      <div className="visual-orbit visual-orbit-two" />
+      <div className="visual-window visual-window-main">
+        <div className="visual-window-topbar"><span /><span /><span /><small>{t('A calm place to create', 'Một nơi thật đẹp để sáng tạo')}</small></div>
+        <div className="visual-window-scene">
+          <div className="scene-sun" />
+          <div className="scene-arch"><span className="scene-mirror" /><span className="scene-chair" /><span className="scene-plant" /></div>
+        </div>
+        <div className="visual-window-caption"><span>{t('Open tomorrow', 'Mở lịch ngày mai')}</span><strong>09:00 — 17:00</strong></div>
+      </div>
+      <div className="visual-tile visual-tile-detail"><span className="tile-detail-shape" /><small>{t('Private suite', 'Phòng riêng')}</small></div>
+      <div className="visual-tile visual-tile-texture"><span className="tile-texture-lines" /><small>{t('Made for your craft', 'Sinh ra cho tay nghề của bạn')}</small></div>
+      <div className="visual-note visual-note-top"><span className="visual-note-icon"><Icon name="sparkles" size={15} /></span><span><small>{t('CURATED FOR YOU', 'ĐƯỢC CHỌN CHO BẠN')}</small><strong>{t('A better day starts here', 'Một ngày làm việc bắt đầu từ đây')}</strong></span></div>
+      <div className="visual-note visual-note-bottom"><span className="visual-live-dot" />{t('Live schedule', 'Lịch trực tiếp')}</div>
+    </div>
   );
 }
 

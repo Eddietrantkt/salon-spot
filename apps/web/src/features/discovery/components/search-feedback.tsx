@@ -9,11 +9,12 @@ interface SearchFeedbackProps {
   isLoading: boolean;
   hasItems: boolean;
   onRefineSearch: () => void;
+  onRetry: () => void;
 }
 
-export function SearchFeedback({ error, hasSearched, isLoading, hasItems, onRefineSearch }: SearchFeedbackProps): JSX.Element | null {
+export function SearchFeedback({ error, hasSearched, isLoading, hasItems, onRefineSearch, onRetry }: SearchFeedbackProps): JSX.Element | null {
   const { t } = useI18n();
-  if (error) return <p className="notice error" role="alert">{localizedErrorMessage(error, t)}</p>;
+  if (error) return <section className="notice error" role="alert"><p>{localizedErrorMessage(error, t)}</p><div className="notice-action-row"><button type="button" onClick={onRetry}>{t('Try again', 'Thử lại')}</button><button className="text-button" type="button" onClick={onRefineSearch}>{t('Change search', 'Đổi tìm kiếm')}</button></div></section>;
   const message = searchFeedbackMessage({ hasSearched, hasItems, isLoading });
   const localized = message === 'Choose a location and date to see live workspace availability.'
     ? t(message, 'Chọn địa điểm và ngày để xem lịch trống trực tiếp.')

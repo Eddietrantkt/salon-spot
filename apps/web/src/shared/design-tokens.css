@@ -1,0 +1,89 @@
+:root {
+  --color-canvas: #f7f4ef;
+  --color-surface: #fffdf9;
+  --color-surface-subtle: #f0ece5;
+  --color-text-primary: #18312c;
+  --color-text-secondary: #61706b;
+  --color-border: #d8d2c8;
+  --color-brand-primary: #1d4c43;
+  --color-brand-accent: #b96346;
+  --color-brand-accent-soft: #f5e2d8;
+  --color-success: #2f6b4f;
+  --color-warning: #9a6a2f;
+  --color-error: #a0443b;
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-hero: 20px;
+  --shadow-card: 0 1px 2px rgb(24 49 44 / 6%);
+  --shadow-float: 0 12px 32px rgb(24 49 44 / 10%);
+  --motion-standard: 180ms ease-out;
+  --canvas: var(--color-canvas);
+  --surface: var(--color-surface);
+  --surface-muted: var(--color-surface-subtle);
+  --surface-strong: #e9e4dc;
+  --ink: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --outline: var(--color-border);
+  --primary: var(--color-brand-primary);
+  --accent: var(--color-brand-accent);
+  --accent-soft: var(--color-brand-accent-soft);
+  --success: var(--color-success);
+  --danger: var(--color-error);
+}
+
+.ui-icon { flex: 0 0 auto; vertical-align: middle; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid rgb(185 99 70 / 38%); outline-offset: 3px; }
+.site-header { border-bottom-color: rgb(216 210 200 / 80%); background: rgb(247 244 239 / 92%); }
+.site-header .brand { color: var(--color-brand-primary); }
+.app-nav a, .app-nav button, .text-button { color: var(--color-text-secondary); }
+.app-nav a.nav-active { color: var(--color-brand-primary); box-shadow: inset 0 -2px var(--color-brand-accent); }
+.search-feedback-empty, .notice { border-color: var(--color-border); background: var(--color-surface-subtle); }
+.notice.error { border-color: rgb(160 68 59 / 32%); background: #fff0ed; color: var(--color-error); }
+.notice-action-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 12px; }
+.notice-action-row .text-button { min-height: 40px; padding-left: 0; }
+.workspace-card, .booking-card, .booking-panel, .owner-panel, .owned-salons, .admin-panel, .auth-card { border-color: var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+.workspace-card:hover, .booking-card:hover { box-shadow: var(--shadow-float); }
+.workspace-card-body { gap: 9px; }
+.workspace-card h2 { color: var(--color-text-primary); }
+.workspace-select { background: var(--color-brand-primary) !important; }
+.card-live-label { background: #e2f0e8; color: var(--color-success); }
+.workspace-media-count { display: inline-flex; align-items: center; gap: 5px; }
+.workspace-image-fallback, .booking-card-image { background: linear-gradient(135deg, #e9dfd2, #d1c5b7); color: var(--color-brand-primary); }
+.search-feedback-empty p { margin-bottom: 0; }
+.search-form-loading .search-submit { position: relative; }
+.search-form-loading .search-submit::after { width: 13px; height: 13px; margin-left: 7px; border: 2px solid rgb(255 255 255 / 38%); border-top-color: #fff; border-radius: 50%; content: ''; animation: search-spinner .75s linear infinite; }
+.nav-more { position: relative; }
+.nav-more summary { display: inline-flex; min-height: 40px; align-items: center; gap: 5px; padding: 8px 9px; color: var(--color-text-secondary); cursor: pointer; list-style: none; font-size: .86rem; font-weight: 700; white-space: nowrap; }
+.nav-more summary::-webkit-details-marker { display: none; }
+.nav-more summary::after { border: 4px solid transparent; border-top-color: currentColor; content: ''; transform: translateY(2px); }
+.nav-more[open] summary, .nav-more summary:hover { color: var(--color-brand-primary); }
+.nav-more-menu { position: absolute; top: calc(100% + 10px); right: 0; display: grid; min-width: 190px; gap: 4px; padding: 8px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); box-shadow: var(--shadow-float); }
+.nav-more-menu a { display: flex; min-height: 42px; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; }
+.nav-more-menu a:hover, .nav-more-menu a.nav-active { background: var(--color-surface-subtle); box-shadow: none; }
+.mobile-nav .nav-item-content { display: grid; justify-items: center; gap: 3px; }
+.mobile-nav .mobile-nav-icon { display: grid; min-height: 20px; place-items: center; }
+.mobile-nav .mobile-nav-badge { position: absolute; top: 7px; margin-left: 20px; padding: 2px 5px; border-radius: 999px; background: var(--color-brand-accent); color: white; font-size: .58rem; line-height: 1.1; }
+.mobile-nav a, .mobile-nav button { position: relative; }
+.site-footer { display: flex; width: min(100% - 32px, 1240px); align-items: center; justify-content: space-between; gap: 20px; padding: 22px 0 calc(28px + env(safe-area-inset-bottom)); margin: 0 auto; border-top: 1px solid var(--color-border); color: var(--color-text-secondary); font-size: .78rem; line-height: 1.5; }
+.site-footer p { max-width: 620px; margin: 0; }
+.site-footer strong { color: var(--color-brand-primary); }
+@media (max-width: 1120px) and (min-width: 761px) {
+  .site-header { gap: 12px; padding-inline: 24px; }
+  .app-nav { gap: 0; }
+  .app-nav a { padding-inline: 7px; font-size: .78rem; }
+  .account-status { padding-left: 4px; }
+  .account-status small { display: none; }
+  .language-switcher { flex: 0 0 auto; }
+}
+@media (max-width: 960px) and (min-width: 761px) {
+  .discovery-hero { grid-template-columns: 1fr; min-height: 0; }
+  .discovery-hero-intro { gap: 24px; }
+  .discovery-hero-side { min-height: 360px; }
+  .discovery-visual { min-height: 360px; }
+  .visual-window-main { width: min(72%, 420px); }
+}
+@media (max-width: 760px) {
+  .site-footer { display: grid; gap: 6px; padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .nav-more { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .search-form-loading .search-submit::after { animation: none; } }

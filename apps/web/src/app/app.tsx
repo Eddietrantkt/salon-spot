@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX, type MouseEvent } from 'react';
+import { useEffect, useState, type JSX, type MouseEvent, type ReactNode } from 'react';
 import type { AuthenticationResponse } from '@salon-spot/contracts';
 import { DiscoveryPage } from '../features/discovery/pages/discovery-page';
 import { WorkspaceBookingPage } from '../features/booking/pages/workspace-booking-page';
@@ -16,6 +16,7 @@ import { tomorrowInLocalCalendar } from '../shared/date/local-date';
 import { LanguageSwitcher } from '../shared/i18n/language-switcher';
 import { useI18n } from '../shared/i18n/i18n-provider';
 import { canAccessRoleRoute, navigationDestinations } from './session-access';
+import { Icon } from '../shared/ui/icon';
 
 type RouteName = 'discovery' | 'workspace' | 'bookings' | 'notifications' | 'owner' | 'admin' | 'professional-onboarding' | 'login' | 'not-found';
 
@@ -88,22 +89,25 @@ export function App(): JSX.Element {
           <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
           {navigation.includes('bookings') && <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('My bookings', 'Lịch đặt của tôi')}</NavigationLink>}
           {navigation.includes('notifications') && <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationLabel}</NavigationLink>}
-          {navigation.includes('professional-onboarding') && <NavigationLink active={route.name === 'professional-onboarding'} to="/professional/onboarding" onNavigate={navigate}>{t('Professional profile', 'Hồ sơ chuyên viên')}</NavigationLink>}
-          {navigation.includes('owner') && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>}
-          {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>}
+          {(navigation.includes('professional-onboarding') || navigation.includes('owner') || navigation.includes('admin')) && <details className="nav-more" open={route.name === 'professional-onboarding' || route.name === 'owner' || route.name === 'admin'}><summary>{t('Workspace', 'Khu vực')}</summary><div className="nav-more-menu">
+            {navigation.includes('professional-onboarding') && <NavigationLink active={route.name === 'professional-onboarding'} to="/professional/onboarding" onNavigate={navigate}><Icon name="user" size={16} />{t('Professional profile', 'Hồ sơ chuyên viên')}</NavigationLink>}
+            {navigation.includes('owner') && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}><Icon name="store" size={16} />{t('Owner', 'Chủ salon')}</NavigationLink>}
+            {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}><Icon name="shield" size={16} />{t('Admin', 'Quản trị')}</NavigationLink>}
+          </div></details>}
           {session ? <div className="account-status"><span aria-live="polite"><strong>{t('Hi', 'Xin chào')}, {session.user.displayName}</strong><small>{accountContext(session, route.name, t)}</small></span><button className="text-button" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
         </nav>
         <LanguageSwitcher />
       </header>
       {content}
+      <footer className="site-footer"><p><strong>The Salon Spot</strong> · {t('A calmer way to find a ready-to-work beauty space.', 'Cách nhẹ nhàng hơn để tìm không gian làm đẹp sẵn sàng làm việc.')}</p><span>{t('Availability, local time and booking details are shown before you confirm.', 'Lịch trống, giờ địa phương và chi tiết lịch đặt luôn được hiển thị trước khi xác nhận.')}</span></footer>
       <nav className="mobile-nav" aria-label={t('Mobile navigation', 'Điều hướng di động')}>
-        <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
-        {navigation.includes('bookings') && <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('Bookings', 'Lịch đặt')}</NavigationLink>}
-        {navigation.includes('notifications') && <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationUnreadCount > 0 ? `🔔 ${notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}` : '🔔'}</NavigationLink>}
-        {navigation.includes('professional-onboarding') && <NavigationLink active={route.name === 'professional-onboarding'} to="/professional/onboarding" onNavigate={navigate}>{t('Profile', 'Hồ sơ')}</NavigationLink>}
-        {navigation.includes('owner') && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>}
-        {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>}
-        {session ? <button type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
+        <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="compass" size={19} /></span><span>{t('Explore', 'Khám phá')}</span></span></NavigationLink>
+        {navigation.includes('bookings') && <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="calendar-check" size={19} /></span><span>{t('Bookings', 'Lịch đặt')}</span></span></NavigationLink>}
+        {navigation.includes('notifications') && <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="bell" size={19} /></span><span>{t('Alerts', 'Tin báo')}</span></span>{notificationUnreadCount > 0 && <span className="mobile-nav-badge" aria-label={`${notificationUnreadCount} ${t('unread notifications', 'thông báo chưa đọc')}`}>{notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}</span>}</NavigationLink>}
+        {navigation.includes('professional-onboarding') && <NavigationLink active={route.name === 'professional-onboarding'} to="/professional/onboarding" onNavigate={navigate}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="user" size={19} /></span><span>{t('Profile', 'Hồ sơ')}</span></span></NavigationLink>}
+        {navigation.includes('owner') && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="store" size={19} /></span><span>{t('Owner', 'Chủ salon')}</span></span></NavigationLink>}
+        {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="shield" size={19} /></span><span>{t('Admin', 'Quản trị')}</span></span></NavigationLink>}
+        {session ? <button type="button" onClick={() => void signOut()}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="user" size={19} /></span><span>{t('Sign out', 'Đăng xuất')}</span></span></button> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}><span className="nav-item-content"><span className="mobile-nav-icon"><Icon name="user" size={19} /></span><span>{t('Sign in', 'Đăng nhập')}</span></span></NavigationLink>}
       </nav>
     </div>
   );
@@ -247,7 +251,7 @@ function destinationFor(returnTo: string): LoginDestination {
   return 'explore';
 }
 
-function NavigationLink({ active = false, className, to, onNavigate, children }: { active?: boolean; className?: string; to: string; onNavigate: (to: string) => void; children: string }): JSX.Element {
+function NavigationLink({ active = false, className, to, onNavigate, children }: { active?: boolean; className?: string; to: string; onNavigate: (to: string) => void; children: ReactNode }): JSX.Element {
   function intercept(event: MouseEvent<HTMLAnchorElement>): void {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
