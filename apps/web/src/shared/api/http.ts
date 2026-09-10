@@ -1,15 +1,23 @@
 // Production nginx proxies this relative path to the API, keeping refresh cookies same-origin.
-export const apiBaseUrl = import.meta.env.VITE_API_URL ?? '/api/v1';
+export const apiBaseUrl = import.meta.env?.VITE_API_URL ?? '/api/v1';
+export const API_REQUEST_TIMEOUT_MS = 15_000;
 
 export class ApiRequestError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly requestId?: string;
+
   constructor(
     message: string,
-    readonly status: number,
-    readonly code?: string,
-    readonly requestId?: string
+    status: number,
+    code?: string,
+    requestId?: string
   ) {
     super(message);
     this.name = 'ApiRequestError';
+    this.status = status;
+    this.code = code;
+    this.requestId = requestId;
   }
 }
 
@@ -66,10 +74,14 @@ export async function deleteJson<T>(path: string, accessToken: string): Promise<
 
 async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
   let response: Response;
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), API_REQUEST_TIMEOUT_MS);
   try {
-    response = await fetch(`${apiBaseUrl}${path}`, { ...init, credentials: 'include' });
+    response = await fetch(`${apiBaseUrl}${path}`, { ...init, credentials: 'include', signal: controller.signal });
   } catch {
     throw new ApiRequestError('We could not reach the service. Check your connection and try again.', 0);
+  } finally {
+    globalThis.clearTimeout(timeout);
   }
   if (!response.ok) {
     const fallback = 'We could not complete that request. Please try again.';
