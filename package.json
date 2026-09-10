@@ -16,7 +16,8 @@
     "p1:runtime-smoke": "node scripts/p1/runtime-smoke.mjs",
     "p1:backup-restore": "node scripts/p1/backup-restore-rehearsal.mjs",
     "p1:browser": "node scripts/p1/browser-uat.mjs",
-    "p1:notifications:browser": "node scripts/p1/notification-browser-qa.mjs"
+    "p1:notifications:browser": "node scripts/p1/notification-browser-qa.mjs",
+    "p1:reviews:browser": "node scripts/p1/reviews-browser-qa.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.57.0"

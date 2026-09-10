@@ -241,6 +241,18 @@ V1 dùng polling hoặc refresh theo trang; realtime WebSocket chỉ thêm sau k
 
 ## 8. Phase D - Reviews và Trust
 
+### 8.0 Trạng thái triển khai Salon review đầu tiên (2026-09-08)
+
+Đã triển khai lát cắt Salon review phục vụ Core MVP:
+
+- Professional chỉ gửi được review từ Booking của chính mình đã ở trạng thái `COMPLETED`.
+- Mỗi Booking chỉ tạo một review; API ghi idempotency, khóa Booking khi ghi và database có unique constraint chống race.
+- `POST /api/v1/bookings/:bookingId/reviews` nhận rating 1-5 và body tùy chọn tối đa 1.000 ký tự.
+- `GET /api/v1/salons/:salonId/reviews` công khai review `PUBLISHED`, phân trang và aggregate điểm từ server.
+- Web hiển thị form trong mục lịch đã qua, lưu trạng thái đã review sau reload và hiển thị review đã xác thực tại Workspace detail.
+
+Chưa thuộc lát cắt này: sửa review trong 24 giờ, review Professional, lịch sử review riêng, report/moderation và trust summary lưu sẵn. Các mục bên dưới vẫn là kế hoạch mở rộng.
+
 ### 8.1 Professional verification
 
 Hoàn thiện foundation hiện có:

@@ -53,7 +53,11 @@ export class BookingsService {
 
   async getMine(actorUserId: string): Promise<MyBookingsResponse> {
     await this.professionals.assertActive(actorUserId);
-    const bookings = await this.prisma.booking.findMany({ where: { professionalUserId: actorUserId }, orderBy: { startsAt: 'desc' } });
+    const bookings = await this.prisma.booking.findMany({
+      where: { professionalUserId: actorUserId },
+      orderBy: { startsAt: 'desc' },
+      include: { review: { select: { id: true } } }
+    });
     return { bookings: bookings.map(toSummary) };
   }
 
@@ -65,10 +69,16 @@ export class BookingsService {
           { professionalUserId: actorUserId },
           { slot: { workspace: { salon: { memberships: { some: { userId: actorUserId } } } } } }
         ]
-      }
+      },
+      include: { review: { select: { id: true } } }
     });
     if (!booking) throw new NotFoundException('Booking was not found.');
-    return { booking: toSummary(booking), viewerCanCancel: booking.professionalUserId === actorUserId };
+    const isBookingProfessional = booking.professionalUserId === actorUserId;
+    return {
+      booking: toSummary(booking),
+      viewerCanCancel: isBookingProfessional,
+      viewerCanReview: isBookingProfessional && booking.status === BookingStatus.COMPLETED && booking.review === null
+    };
   }
 
   async cancel(actorUserId: string, bookingId: string, idempotencyKey: string, requestId?: string): Promise<CancelBookingResponse> {
@@ -129,7 +139,7 @@ function expiredHold(): ConflictException {
 }
 
 function toSummary(booking: {
-  id: string; status: BookingStatus; workspaceName: string; rentalOptionLabel: string; priceCents: number; startsAt: Date; endsAt: Date; salonTimezone: string; localDate: Date; cancelledAt: Date | null; completedAt: Date | null;
+  id: string; status: BookingStatus; workspaceName: string; rentalOptionLabel: string; priceCents: number; startsAt: Date; endsAt: Date; salonTimezone: string; localDate: Date; cancelledAt: Date | null; completedAt: Date | null; review?: { id: string } | null;
 }): BookingSummary {
   return {
     id: booking.id,
@@ -142,6 +152,7 @@ function toSummary(booking: {
     salonTimezone: booking.salonTimezone,
     localDate: booking.localDate.toISOString().slice(0, 10),
     cancelledAt: booking.cancelledAt?.toISOString() ?? null,
-    completedAt: booking.completedAt?.toISOString() ?? null
+    completedAt: booking.completedAt?.toISOString() ?? null,
+    reviewId: booking.review?.id ?? null
   };
 }

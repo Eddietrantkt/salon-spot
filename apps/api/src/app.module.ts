@@ -15,6 +15,7 @@ import { MediaModule } from './modules/media/media.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { ProfessionalsModule } from './modules/professionals/professionals.module.js';
+import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { SalonsModule } from './modules/salons/salons.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
@@ -34,6 +35,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     PaymentsModule,
     MediaModule,
     NotificationsModule,
+    ReviewsModule,
     ChatModule,
     AdminModule,
     DiscoveryModule

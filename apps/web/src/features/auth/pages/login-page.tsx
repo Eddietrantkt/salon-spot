@@ -56,9 +56,9 @@ export function LoginPage({ destination, onAuthenticated, onBack }: LoginPagePro
         <h1 id="login-heading">{mode === 'login' ? t(...copy.title) : t('Create your account', 'Tạo tài khoản')}</h1>
         <p className="lead">{mode === 'login' ? t(...copy.description) : t('Choose the journey you want to start. You can later add another capability to the same account.', 'Chọn hành trình bạn muốn bắt đầu. Sau này bạn có thể thêm vai trò khác vào cùng tài khoản.')}</p>
         <ul className="auth-benefits">
-          <li>{t('Your password is protected by the server; it is never stored in the browser.', 'Mật khẩu được máy chủ bảo vệ và không bao giờ được lưu trong trình duyệt.')}</li>
-          <li>{t('Your session can be safely restored using a secure refresh cookie.', 'Phiên đăng nhập có thể được khôi phục an toàn bằng cookie bảo mật.')}</li>
-          <li>{t('Creating a salon grants Owner access for that salon. Professional access stays pending until activated.', 'Khi tạo salon, bạn được cấp quyền Chủ salon cho salon đó. Quyền Chuyên viên vẫn chờ cho đến khi được kích hoạt.')}</li>
+          <li><span className="auth-benefit-icon" aria-hidden="true">✓</span><span>{t('Your password is protected by the server; it is never stored in the browser.', 'Mật khẩu được máy chủ bảo vệ và không bao giờ được lưu trong trình duyệt.')}</span></li>
+          <li><span className="auth-benefit-icon" aria-hidden="true">✓</span><span>{t('Your session can be safely restored using a secure refresh cookie.', 'Phiên đăng nhập có thể được khôi phục an toàn bằng cookie bảo mật.')}</span></li>
+          <li><span className="auth-benefit-icon" aria-hidden="true">✓</span><span>{t('Creating a salon grants Owner access for that salon. Professional access stays pending until activated.', 'Khi tạo salon, bạn được cấp quyền Chủ salon cho salon đó. Quyền Chuyên viên vẫn chờ cho đến khi được kích hoạt.')}</span></li>
         </ul>
       </div>
       <section className="auth-card" aria-label={mode === 'login' ? t('Sign in form', 'Biểu mẫu đăng nhập') : t('Registration form', 'Biểu mẫu đăng ký')}>

@@ -16,7 +16,7 @@ export class PublicWorkspaceDetailService {
         id: true,
         name: true,
         coverMediaId: true,
-        salon: { select: { name: true, area: true, timezone: true } },
+        salon: { select: { id: true, name: true, area: true, timezone: true } },
         media: {
           where: { status: MediaStatus.READY },
           orderBy: { sortOrder: 'asc' },
@@ -40,6 +40,7 @@ export class PublicWorkspaceDetailService {
     }));
     return {
       workspaceId: workspace.id,
+      salonId: workspace.salon.id,
       workspaceName: workspace.name,
       salonName: workspace.salon.name,
       area: workspace.salon.area,

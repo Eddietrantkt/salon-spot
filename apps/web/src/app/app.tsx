@@ -10,10 +10,12 @@ import { ProfessionalOnboardingPage } from '../features/professionals/pages/prof
 import { NotificationsPage } from '../features/notifications/pages/notifications-page';
 import { getNotificationUnreadCount } from '../features/notifications/api/notifications-api';
 import { notificationTargetPath } from '../features/notifications/notification-copy';
-import { logout } from '../features/auth/api/auth-api';
+import { logout, refreshSession } from '../features/auth/api/auth-api';
+import { ApiRequestError } from '../shared/api/http';
 import { tomorrowInLocalCalendar } from '../shared/date/local-date';
 import { LanguageSwitcher } from '../shared/i18n/language-switcher';
 import { useI18n } from '../shared/i18n/i18n-provider';
+import { canAccessRoleRoute, navigationDestinations } from './session-access';
 
 type RouteName = 'discovery' | 'workspace' | 'bookings' | 'notifications' | 'owner' | 'admin' | 'professional-onboarding' | 'login' | 'not-found';
 
@@ -28,12 +30,24 @@ export function App(): JSX.Element {
   const { t } = useI18n();
   const [route, setRoute] = useState<Route>(readRoute);
   const [session, setSession] = useState<AuthenticationResponse | null>(null);
+  const [isSessionResolved, setIsSessionResolved] = useState(false);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
 
   useEffect(() => {
     const onPopState = () => setRoute(readRoute());
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void refreshSession()
+      .then((restored) => { if (active) setSession(restored); })
+      .catch((reason) => {
+        if (active && !(reason instanceof ApiRequestError && reason.status === 401)) console.error(reason);
+      })
+      .finally(() => { if (active) setIsSessionResolved(true); });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -62,8 +76,9 @@ export function App(): JSX.Element {
   }
 
   const currentPath = `${route.pathname}${window.location.search}`;
-  const content = renderRoute(route, currentPath, navigate, openLogin, setSession, session, setNotificationUnreadCount, t);
+  const content = renderRoute(route, currentPath, navigate, openLogin, setSession, session, isSessionResolved, setNotificationUnreadCount, t);
   const notificationLabel = `${t('Notifications', 'Thông báo')}${notificationUnreadCount > 0 ? ` (${notificationUnreadCount > 99 ? '99+' : notificationUnreadCount})` : ''}`;
+  const navigation = navigationDestinations(session);
 
   return (
     <div className="app-frame">
@@ -71,22 +86,24 @@ export function App(): JSX.Element {
         <NavigationLink className="brand" to="/" onNavigate={navigate}>The Salon Spot</NavigationLink>
         <nav className="app-nav" aria-label={t('Primary navigation', 'Điều hướng chính')}>
           <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
-          <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('My bookings', 'Lịch đặt của tôi')}</NavigationLink>
-          <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationLabel}</NavigationLink>
-          <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>
-          <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>
-          {session ? <div className="account-status"><span aria-live="polite">{t('Hi', 'Xin chào')}, {session.user.displayName}</span><button className="text-button" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
+          {navigation.includes('bookings') && <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('My bookings', 'Lịch đặt của tôi')}</NavigationLink>}
+          {navigation.includes('notifications') && <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationLabel}</NavigationLink>}
+          {navigation.includes('professional-onboarding') && <NavigationLink active={route.name === 'professional-onboarding'} to="/professional/onboarding" onNavigate={navigate}>{t('Professional profile', 'Hồ sơ chuyên viên')}</NavigationLink>}
+          {navigation.includes('owner') && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>}
+          {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>}
+          {session ? <div className="account-status"><span aria-live="polite"><strong>{t('Hi', 'Xin chào')}, {session.user.displayName}</strong><small>{accountContext(session, route.name, t)}</small></span><button className="text-button" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
         </nav>
         <LanguageSwitcher />
       </header>
       {content}
       <nav className="mobile-nav" aria-label={t('Mobile navigation', 'Điều hướng di động')}>
         <NavigationLink active={route.name === 'discovery' || route.name === 'workspace'} to="/" onNavigate={navigate}>{t('Explore', 'Khám phá')}</NavigationLink>
-        <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('Bookings', 'Lịch đặt')}</NavigationLink>
-        <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationUnreadCount > 0 ? `🔔 ${notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}` : '🔔'}</NavigationLink>
-        <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>
-        <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>
-        {session ? <button type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button> : <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
+        {navigation.includes('bookings') && <NavigationLink active={route.name === 'bookings'} to="/bookings" onNavigate={navigate}>{t('Bookings', 'Lịch đặt')}</NavigationLink>}
+        {navigation.includes('notifications') && <NavigationLink active={route.name === 'notifications'} to="/notifications" onNavigate={navigate}>{notificationUnreadCount > 0 ? `🔔 ${notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}` : '🔔'}</NavigationLink>}
+        {navigation.includes('professional-onboarding') && <NavigationLink active={route.name === 'professional-onboarding'} to="/professional/onboarding" onNavigate={navigate}>{t('Profile', 'Hồ sơ')}</NavigationLink>}
+        {navigation.includes('owner') && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}>{t('Owner', 'Chủ salon')}</NavigationLink>}
+        {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}>{t('Admin', 'Quản trị')}</NavigationLink>}
+        {session ? <button type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
       </nav>
     </div>
   );
@@ -99,6 +116,7 @@ function renderRoute(
   openLogin: (returnTo: string) => void,
   setSession: (session: AuthenticationResponse | null) => void,
   session: AuthenticationResponse | null,
+  isSessionResolved: boolean,
   setNotificationUnreadCount: (count: number) => void,
   t: (english: string, vietnamese: string) => string
 ): JSX.Element {
@@ -120,19 +138,74 @@ function renderRoute(
     const date = route.search.get('date') ?? tomorrowInLocalCalendar();
     const area = route.search.get('area');
     const returnTo = area ? `/?${new URLSearchParams({ area, date })}` : '/';
-    return <WorkspaceBookingPage workspaceId={route.workspaceId} date={date} onBack={() => navigate(returnTo)} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+    return <WorkspaceBookingPage workspaceId={route.workspaceId} date={date} initialSession={session} sessionResolved={isSessionResolved} onBack={() => navigate(returnTo)} onDateChange={(nextDate) => navigate(workspacePath(route.workspaceId!, area, nextDate))} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   }
 
-  if (route.name === 'bookings') return <MyBookingsPage focusBookingId={route.search.get('bookingId') ?? undefined} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
-  if (route.name === 'notifications') return <NotificationsPage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} onUnreadCountChange={setNotificationUnreadCount} onOpenNotification={(notification) => navigate(notificationTargetPath(notification))} />;
-  if (route.name === 'owner') return <OwnerConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
-  if (route.name === 'admin') return <AdminConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
-  if (route.name === 'professional-onboarding') return <ProfessionalOnboardingPage initialSession={session} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  if (route.name === 'bookings') {
+    const focusBookingId = route.search.get('bookingId') ?? undefined;
+    if (!isSessionResolved) return <SessionLoadingPage t={t} />;
+    if (!session) return <SignInRequiredPage destination="bookings" onSignIn={() => openLogin(currentPath)} onExplore={() => navigate('/')} t={t} />;
+    if (!canAccessRoleRoute('bookings', session, Boolean(focusBookingId))) return <RoleAccessDeniedPage onExplore={() => navigate('/')} t={t} />;
+    return <MyBookingsPage initialSession={session} focusBookingId={focusBookingId} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  }
+  if (route.name === 'notifications') {
+    if (!isSessionResolved) return <SessionLoadingPage t={t} />;
+    if (!session) return <SignInRequiredPage destination="notifications" onSignIn={() => openLogin(currentPath)} onExplore={() => navigate('/')} t={t} />;
+    return <NotificationsPage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} onUnreadCountChange={setNotificationUnreadCount} onOpenNotification={(notification) => navigate(notificationTargetPath(notification))} />;
+  }
+  if (route.name === 'owner') {
+    if (!isSessionResolved) return <SessionLoadingPage t={t} />;
+    if (!session) return <SignInRequiredPage destination="owner" onSignIn={() => openLogin(currentPath)} onExplore={() => navigate('/')} t={t} />;
+    if (!canAccessRoleRoute('owner', session)) return <RoleAccessDeniedPage onExplore={() => navigate('/')} t={t} />;
+    return <OwnerConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  }
+  if (route.name === 'admin') {
+    if (!isSessionResolved) return <SessionLoadingPage t={t} />;
+    if (!session) return <SignInRequiredPage destination="admin" onSignIn={() => openLogin(currentPath)} onExplore={() => navigate('/')} t={t} />;
+    if (!canAccessRoleRoute('admin', session)) return <RoleAccessDeniedPage onExplore={() => navigate('/')} t={t} />;
+    return <AdminConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  }
+  if (route.name === 'professional-onboarding') {
+    if (!isSessionResolved) return <SessionLoadingPage t={t} />;
+    if (!session) return <SignInRequiredPage destination="professional" onSignIn={() => openLogin(currentPath)} onExplore={() => navigate('/')} t={t} />;
+    if (!canAccessRoleRoute('professional-onboarding', session)) return <RoleAccessDeniedPage onExplore={() => navigate('/')} t={t} />;
+    return <ProfessionalOnboardingPage initialSession={session} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+  }
   if (route.name === 'login') {
     const returnTo = safeReturnTo(route.search.get('returnTo'));
     return <LoginPage destination={destinationFor(returnTo)} onAuthenticated={(nextSession, registrationIntent) => { setSession(nextSession); navigate(registrationIntent === 'PROFESSIONAL' ? '/professional/onboarding' : registrationIntent === 'OWNER' ? '/owner' : returnTo, true); }} onBack={() => navigate('/')} />;
   }
   return <main className="page-shell"><h1>{t('Page not found', 'Không tìm thấy trang')}</h1><p className="lead">{t('This link does not point to an available Salon Spot page.', 'Liên kết này không dẫn đến một trang hiện có của Salon Spot.')}</p><button type="button" onClick={() => navigate('/')}>{t('Return to explore', 'Quay lại khám phá')}</button></main>;
+}
+
+type Translate = (english: string, vietnamese: string) => string;
+
+function SessionLoadingPage({ t }: { t: Translate }): JSX.Element {
+  return <main className="page-shell access-shell"><section className="access-card" aria-busy="true"><p className="eyebrow">THE SALON SPOT</p><h1>{t('Restoring your account…', 'Đang khôi phục tài khoản…')}</h1><p className="lead">{t('We are checking the secure session on this device.', 'Hệ thống đang kiểm tra phiên bảo mật trên thiết bị này.')}</p></section></main>;
+}
+
+function SignInRequiredPage({ destination, onSignIn, onExplore, t }: { destination: 'bookings' | 'notifications' | 'professional' | 'owner' | 'admin'; onSignIn: () => void; onExplore: () => void; t: Translate }): JSX.Element {
+  const labels = {
+    bookings: t('your bookings', 'lịch đặt của bạn'),
+    notifications: t('notifications', 'thông báo'),
+    professional: t('your Professional profile', 'hồ sơ Chuyên viên'),
+    owner: t('the Owner portal', 'khu vực Chủ salon'),
+    admin: t('the Admin portal', 'khu vực Quản trị')
+  };
+  return <main className="page-shell access-shell"><section className="access-card"><p className="eyebrow">{t('ACCOUNT REQUIRED', 'YÊU CẦU TÀI KHOẢN')}</p><h1>{t(`Sign in to open ${labels[destination]}`, `Đăng nhập để mở ${labels[destination]}`)}</h1><p className="lead">{t('Guest access is limited to Explore. After sign-in, navigation is personalized to the capabilities assigned to your account.', 'Khách chỉ có thể sử dụng phần Khám phá. Sau khi đăng nhập, điều hướng sẽ được cá nhân hoá theo quyền được cấp cho tài khoản.')}</p><div className="access-actions"><button type="button" onClick={onSignIn}>{t('Sign in', 'Đăng nhập')}</button><button className="text-button" type="button" onClick={onExplore}>{t('Back to Explore', 'Quay lại Khám phá')}</button></div></section></main>;
+}
+
+function RoleAccessDeniedPage({ onExplore, t }: { onExplore: () => void; t: Translate }): JSX.Element {
+  return <main className="page-shell access-shell"><section className="access-card"><p className="eyebrow">{t('ACCESS LIMITED', 'GIỚI HẠN TRUY CẬP')}</p><h1>{t('This area is not assigned to your account', 'Khu vực này không thuộc quyền của tài khoản')}</h1><p className="lead">{t('Only accounts with the matching server-issued capability can open this area. Your current session is still active.', 'Chỉ tài khoản có đúng quyền do máy chủ cấp mới có thể mở khu vực này. Phiên đăng nhập hiện tại của bạn vẫn được giữ nguyên.')}</p><div className="access-actions"><button type="button" onClick={onExplore}>{t('Return to Explore', 'Quay lại Khám phá')}</button></div></section></main>;
+}
+
+function accountContext(session: AuthenticationResponse, routeName: RouteName, t: Translate): string {
+  if (routeName === 'admin' && session.capabilities.admin) return t('Admin workspace', 'Khu vực Quản trị');
+  if (routeName === 'owner' && session.capabilities.owner) return t('Owner workspace', 'Khu vực Chủ salon');
+  if (session.capabilities.professionalStatus) return t('Professional account', 'Tài khoản Chuyên viên');
+  if (session.capabilities.admin) return t('Admin account', 'Tài khoản Quản trị');
+  if (session.capabilities.owner) return t('Owner account', 'Tài khoản Chủ salon');
+  return t('Signed-in account', 'Tài khoản đã đăng nhập');
 }
 
 function readRoute(): Route {
@@ -157,6 +230,12 @@ function safeReturnTo(value: string | null): string {
 
 function normalizeInternalPath(value: string): string {
   return value.startsWith('/') && !value.startsWith('//') ? value : '/';
+}
+
+function workspacePath(workspaceId: string, area: string | null, date: string): string {
+  const search = new URLSearchParams({ date });
+  if (area) search.set('area', area);
+  return `/workspaces/${encodeURIComponent(workspaceId)}?${search}`;
 }
 
 function destinationFor(returnTo: string): LoginDestination {

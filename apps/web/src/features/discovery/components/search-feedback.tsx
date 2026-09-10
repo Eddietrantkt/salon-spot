@@ -21,7 +21,7 @@ export function SearchFeedback({ error, hasSearched, isLoading, hasItems, onRefi
       : message;
   const action = searchFeedbackAction({ hasSearched, hasItems, isLoading });
   if (!localized) return null;
-  return <section className="notice" role="status">
+  return <section className="notice search-feedback-empty" role="status">
     <p>{localized}</p>
     {action === 'refine-search' && <button className="text-button notice-action" type="button" onClick={onRefineSearch}>{t('Change location or date', 'Đổi địa điểm hoặc ngày')}</button>}
   </section>;

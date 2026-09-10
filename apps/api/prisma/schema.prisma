@@ -86,6 +86,11 @@ enum BookingStatus {
   COMPLETED
 }
 
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+}
+
 enum MediaStatus {
   PENDING_UPLOAD
   PROCESSING
@@ -130,6 +135,7 @@ model User {
   displayName                     String                         @db.VarChar(120)
   passwordHash                    String                         @db.VarChar(255)
   status                          UserStatus                     @default(ACTIVE)
+  ownerOnboardingSelectedAt       DateTime?                      @db.DateTime(3)
   createdAt                       DateTime                       @default(now()) @db.DateTime(3)
   memberships                     SalonMembership[]
   authSessions                    AuthSession[]
@@ -143,6 +149,7 @@ model User {
   professionalVerificationReviews ProfessionalVerificationCase[] @relation("ProfessionalVerificationReviewer")
   notifications                   Notification[]
   notificationPreference          NotificationPreference?
+  salonReviews                    Review[]                        @relation("SalonReviewAuthor")
 }
 
 /**
@@ -317,6 +324,7 @@ model Salon {
   workspaces   Workspace[]
   media        SalonMedia[]      @relation("SalonMedia")
   coverMedia   SalonMedia?       @relation("SalonCover", fields: [coverMediaId], references: [id])
+  reviews      Review[]
 }
 
 model SalonMembership {
@@ -420,9 +428,29 @@ model Booking {
   createdAt          DateTime         @default(now()) @db.DateTime(3)
   slot               AvailabilitySlot @relation(fields: [availabilitySlotId], references: [id], onDelete: Restrict)
   professional       User             @relation("ProfessionalBookings", fields: [professionalUserId], references: [id], onDelete: Restrict)
+  review             Review?
 
   @@index([professionalUserId, startsAt])
   @@index([status, endsAt])
+}
+
+/** A verified public Salon review derived from one completed rental. */
+model Review {
+  id           String       @id @default(cuid()) @db.VarChar(30)
+  bookingId    String       @unique @db.VarChar(30)
+  authorUserId String       @db.VarChar(30)
+  salonId      String       @db.VarChar(30)
+  rating       Int          @db.UnsignedTinyInt
+  body         String?      @db.VarChar(1000)
+  status       ReviewStatus @default(PUBLISHED)
+  createdAt    DateTime     @default(now()) @db.DateTime(3)
+  updatedAt    DateTime     @updatedAt @db.DateTime(3)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  author       User         @relation("SalonReviewAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+  salon        Salon        @relation(fields: [salonId], references: [id], onDelete: Restrict)
+
+  @@index([salonId, status, createdAt])
+  @@index([authorUserId, createdAt])
 }
 
 model IdempotencyRecord {

@@ -10,7 +10,7 @@
 | `POST /api/v1/auth/logout` | Revoke one refresh session. Safe to retry. |
 | `GET /api/v1/auth/me` | Return the current user when the request has a valid `Authorization: Bearer <access-token>` header. |
 
-`register`, `login` and `refresh` return the same `AuthenticationResponse`: public user profile, short-lived access token and opaque refresh token with expiry timestamps. The web uses the HttpOnly refresh cookie to restore its in-memory access token after reload. Production CSRF hardening remains a separate deployment/security decision.
+`register`, `login` and `refresh` return the same `AuthenticationResponse`: public user profile, server-derived account capabilities, short-lived access token and opaque refresh token with expiry timestamps. The web uses the HttpOnly refresh cookie to restore its in-memory access token after reload. Production CSRF hardening remains a separate deployment/security decision.
 
 ## Security and ownership rules
 
@@ -20,6 +20,7 @@
 - `JWT_ACCESS_SECRET` and `REFRESH_TOKEN_PEPPER` are required at startup and must be distinct, non-placeholder secrets with at least 32 characters.
 - `RequestIdMiddleware` runs before guards. Every HTTP response, including a 401/403 denial, returns `x-request-id` and the shared error-body `requestId`; CORS exposes the header to the web client.
 - `SalonMembershipAuthorizer` is the BOLA seam. Owner routes use `AccessTokenGuard` followed by `SalonOwnerGuard` and expose `:salonId`.
+- Owner portal entry uses `OwnerPortalGuard`: an account must have selected the Owner journey or already hold an `OWNER` Salon membership. The registration choice is persisted as `ownerOnboardingSelectedAt` so first-Salon setup survives refresh; object mutations remain Salon-scoped through `SalonOwnerGuard`.
 - `ProfessionalProfile` is a 1:0..1 User extension. `ProfessionalGuard` plus service-level checks require status `ACTIVE` for hold, confirm, own-booking read and cancel. Owner and Admin capabilities are independent; a multi-role user needs an explicit Professional profile to book.
 - Registering with `onboardingIntent: PROFESSIONAL` creates a `PENDING` profile. An authenticated user can read and update basic fields via `GET/PATCH /api/v1/professionals/me`; self-service cannot set eligibility, verification or review state. For local/UAT operations, `pnpm --filter @salon-spot/api professional:grant -- person@example.com` activates or restores the profile and writes an audit event.
 - Professional trust data is additive: `ProfessionalVerificationCase` records one review cycle, `ProfessionalCredential` holds structured license/insurance validity, and `ProfessionalDocument` holds private evidence metadata. Existing booking authorization does not consume these fields yet.
@@ -29,3 +30,5 @@
 ## Intentional limits
 
 Password-reset HTTP/email delivery, rate limiting, production CSRF policy, private-document flow and Professional approval/review remain unimplemented. Database persistence for reset tokens and Professional verification exists, but must not be presented as a completed verification workflow. Basic Professional self-service onboarding, Admin authorization, Owner supply and current Professional booking access are implemented separately.
+
+The web navigation is capability-aware: guests see only Explore, Sign in and the language control; authenticated accounts see Notifications plus only their applicable Professional, Owner and Admin destinations. Client-side route gates improve UX, while API guards remain authoritative for every protected operation.

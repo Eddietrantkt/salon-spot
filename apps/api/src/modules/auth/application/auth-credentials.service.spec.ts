@@ -59,7 +59,11 @@ describe('AuthService credential lifecycle', () => {
           email: 'owner@example.com',
           displayName: 'Owner',
           status: UserStatus.ACTIVE,
-          passwordHash: 'scrypt$stored$hash'
+          passwordHash: 'scrypt$stored$hash',
+          ownerOnboardingSelectedAt: null,
+          professionalProfile: null,
+          adminAccess: null,
+          memberships: [{ salonId: 'salon_1' }]
         })
       }
     } as unknown as PrismaService;
@@ -80,7 +84,11 @@ describe('AuthService credential lifecycle', () => {
           email: 'owner@example.com',
           displayName: 'Owner',
           status: UserStatus.ACTIVE,
-          passwordHash: 'scrypt$stored$hash'
+          passwordHash: 'scrypt$stored$hash',
+          ownerOnboardingSelectedAt: null,
+          professionalProfile: null,
+          adminAccess: null,
+          memberships: [{ salonId: 'salon_1' }]
         })
       },
       $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx))

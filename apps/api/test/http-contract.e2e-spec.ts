@@ -13,6 +13,7 @@ import { DiscoveryController } from '../src/modules/discovery/presentation/disco
 
 const authenticationResponse: AuthenticationResponse = {
   user: { id: 'user_1', email: 'owner@example.com', displayName: 'Owner' },
+  capabilities: { professionalStatus: null, owner: true, admin: false },
   accessToken: 'access-token',
   accessTokenExpiresAt: '2026-08-24T01:00:00.000Z'
 };

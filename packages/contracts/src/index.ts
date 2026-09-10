@@ -8,6 +8,8 @@ export const API_ERROR_CODES = [
   'BOOKED_SLOT_IMMUTABLE',
   'HOLD_EXPIRED',
   'CANCELLATION_WINDOW_CLOSED',
+  'REVIEW_NOT_ELIGIBLE',
+  'REVIEW_ALREADY_EXISTS',
   'PAST_SLOT_IMMUTABLE',
   'FORBIDDEN',
   'IDEMPOTENCY_CONFLICT',
@@ -40,8 +42,15 @@ export interface AuthenticatedUser {
   displayName: string;
 }
 
+export interface AccountCapabilities {
+  professionalStatus: ProfessionalProfileStatus | null;
+  owner: boolean;
+  admin: boolean;
+}
+
 export interface AuthenticationResponse {
   user: AuthenticatedUser;
+  capabilities: AccountCapabilities;
   accessToken: string;
   accessTokenExpiresAt: string;
 }
@@ -105,6 +114,7 @@ export interface PublicWorkspaceSlot {
 /** Public detail is an availability snapshot; the server remains authoritative at hold time. */
 export interface WorkspaceDetailResponse {
   workspaceId: string;
+  salonId: string;
   workspaceName: string;
   salonName: string;
   area: string;
@@ -149,6 +159,8 @@ export interface BookingSummary {
   localDate: string;
   cancelledAt: string | null;
   completedAt: string | null;
+  /** Present after this completed rental has been reviewed. */
+  reviewId: string | null;
 }
 
 export interface ConfirmHoldResponse {
@@ -163,10 +175,40 @@ export interface BookingDetailResponse {
   booking: BookingSummary;
   /** Only the Professional who created the booking may cancel it. */
   viewerCanCancel: boolean;
+  /** True only while this viewer may submit the first review for this completed rental. */
+  viewerCanReview: boolean;
 }
 
 export interface CancelBookingResponse {
   booking: BookingSummary;
+}
+
+export interface SalonReview {
+  id: string;
+  salonId: string;
+  authorDisplayName: string;
+  rating: number;
+  body: string | null;
+  createdAt: string;
+  verifiedRental: true;
+}
+
+export interface CreateSalonReviewInput {
+  rating: number;
+  body?: string;
+}
+
+export interface CreateSalonReviewResponse {
+  review: SalonReview;
+}
+
+export interface SalonReviewSummary {
+  averageRating: number | null;
+  reviewCount: number;
+}
+
+export interface SalonReviewsResponse extends PaginatedResponse<SalonReview> {
+  summary: SalonReviewSummary;
 }
 
 export type NotificationType = 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'BOOKING_COMPLETED';

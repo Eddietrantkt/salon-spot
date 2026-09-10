@@ -13,7 +13,7 @@ import { PublicAvailabilityController } from '../src/modules/availability/presen
 import { ProfessionalAccessService } from '../src/modules/professionals/application/professional-access.service.js';
 import { ProfessionalGuard } from '../src/modules/professionals/presentation/professional.guard.js';
 
-const detail: WorkspaceDetailResponse = { workspaceId: 'workspace_1', workspaceName: 'Chair One', salonName: 'Salon One', area: 'D1', timezone: 'Asia/Ho_Chi_Minh', media: [], slots: [] };
+const detail: WorkspaceDetailResponse = { workspaceId: 'workspace_1', salonId: 'salon_1', workspaceName: 'Chair One', salonName: 'Salon One', area: 'D1', timezone: 'Asia/Ho_Chi_Minh', media: [], slots: [] };
 const workspaceDetails = { get: jest.fn(async () => detail) };
 const createdHold: CreateSlotHoldResponse = {
   hold: {

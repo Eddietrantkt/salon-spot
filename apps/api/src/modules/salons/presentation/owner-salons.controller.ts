@@ -6,10 +6,11 @@ import { AccessTokenGuard } from '../../auth/presentation/access-token.guard.js'
 import { CurrentUser } from '../../auth/presentation/current-user.decorator.js';
 import { OwnerSalonsService } from '../application/owner-salons.service.js';
 import { CreateSalonWithWorkspaceDto } from './dto/create-salon-with-workspace.dto.js';
+import { OwnerPortalGuard } from './owner-portal.guard.js';
 
 /** Authenticated Owner entrypoint. Creating a Salon grants the creator OWNER only for that Salon. */
 @Controller('owner/salons')
-@UseGuards(AccessTokenGuard)
+@UseGuards(AccessTokenGuard, OwnerPortalGuard)
 export class OwnerSalonsController {
   constructor(private readonly salons: OwnerSalonsService) {}
 

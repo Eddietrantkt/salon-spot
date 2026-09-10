@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ProfessionalProfileStatus, ProfessionalVerificationStatus, UserStatus, type Prisma, type User } from '@prisma/client';
-import type { AuthenticatedUser, AuthenticationResponse, RegistrationIntent } from '@salon-spot/contracts';
+import type { AccountCapabilities, AuthenticatedUser, AuthenticationResponse, RegistrationIntent } from '@salon-spot/contracts';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma/prisma.service.js';
 import { AccessTokenService } from './access-token.service.js';
@@ -30,7 +30,20 @@ export interface AuthSessionResult {
   refreshTokenExpiresAt: Date;
 }
 
-type SessionUser = Pick<User, 'id' | 'email' | 'displayName'>;
+const sessionUserSelection = {
+  id: true,
+  email: true,
+  displayName: true,
+  passwordHash: true,
+  status: true,
+  ownerOnboardingSelectedAt: true,
+  professionalProfile: { select: { status: true } },
+  adminAccess: { select: { userId: true } },
+  memberships: { where: { role: 'OWNER' }, take: 1, select: { salonId: true } }
+} satisfies Prisma.UserSelect;
+
+type SessionUser = Prisma.UserGetPayload<{ select: typeof sessionUserSelection }>;
+type BasicSessionUser = Pick<User, 'id' | 'email' | 'displayName'>;
 
 @Injectable()
 export class AuthService {
@@ -50,7 +63,14 @@ export class AuthService {
     const result = await this.prisma.$transaction(async (tx) => {
       let user: User;
       try {
-        user = await tx.user.create({ data: { email, displayName: input.displayName.trim(), passwordHash } });
+        user = await tx.user.create({
+          data: {
+            email,
+            displayName: input.displayName.trim(),
+            passwordHash,
+            ownerOnboardingSelectedAt: input.onboardingIntent === 'OWNER' ? new Date() : undefined
+          }
+        });
       } catch (error) {
         if (this.isUniqueEmailViolation(error)) throw new ConflictException('Email is already registered.');
         throw error;
@@ -73,12 +93,16 @@ export class AuthService {
       return { user, refresh };
     });
 
-    return this.toAuthenticationResponse(result.user, result.refresh);
+    return this.toAuthenticationResponse(result.user, result.refresh, {
+      professionalStatus: input.onboardingIntent === 'PROFESSIONAL' ? 'PENDING' : null,
+      owner: input.onboardingIntent === 'OWNER',
+      admin: false
+    });
   }
 
   async login(input: LoginInput, requestId?: string): Promise<AuthSessionResult> {
     const email = input.email.trim().toLowerCase();
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email }, select: sessionUserSelection });
     if (!user || user.status !== UserStatus.ACTIVE || !(await this.passwordService.verify(input.password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid email or password.');
     }
@@ -89,7 +113,7 @@ export class AuthService {
       return session;
     });
 
-    return this.toAuthenticationResponse(user, refresh);
+    return this.toAuthenticationResponse(user, refresh, this.capabilitiesFor(user));
   }
 
   async refresh(refreshToken: string, requestId?: string): Promise<AuthSessionResult> {
@@ -97,7 +121,7 @@ export class AuthService {
     const result = await this.prisma.$transaction(async (tx) => {
       const session = await tx.authSession.findUnique({
         where: { refreshTokenHash },
-        include: { user: { select: { id: true, email: true, displayName: true, status: true } } }
+        include: { user: { select: sessionUserSelection } }
       });
       if (!session) return null;
 
@@ -133,7 +157,7 @@ export class AuthService {
     });
 
     if (!result) throw new UnauthorizedException('Refresh token is invalid or expired.');
-    return this.toAuthenticationResponse(result.user, result.refresh);
+    return this.toAuthenticationResponse(result.user, result.refresh, this.capabilitiesFor(result.user));
   }
 
   async logout(refreshToken: string, requestId?: string): Promise<void> {
@@ -200,11 +224,20 @@ export class AuthService {
     await this.writeAudit(tx, actorUserId, 'AUTH_REFRESH_REUSE_DETECTED', requestId);
   }
 
-  private toAuthenticationResponse(user: SessionUser, refresh: RefreshSession): AuthSessionResult {
+  private capabilitiesFor(user: SessionUser): AccountCapabilities {
+    return {
+      professionalStatus: user.professionalProfile?.status ?? null,
+      owner: Boolean(user.ownerOnboardingSelectedAt || user.memberships.length > 0),
+      admin: Boolean(user.adminAccess)
+    };
+  }
+
+  private toAuthenticationResponse(user: BasicSessionUser, refresh: RefreshSession, capabilities: AccountCapabilities): AuthSessionResult {
     const access = this.accessTokens.issue({ sub: user.id, email: user.email });
     return {
       authentication: {
         user: { id: user.id, email: user.email, displayName: user.displayName },
+        capabilities,
         accessToken: access.token,
         accessTokenExpiresAt: access.expiresAt.toISOString()
       },

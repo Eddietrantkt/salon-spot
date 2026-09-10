@@ -24,7 +24,7 @@ describe('AuthService refresh rotation', () => {
       familyId: 'family_1',
       expiresAt: futureDate(),
       revokedAt: null,
-      user: { id: 'user_1', email: 'owner@example.com', displayName: 'Owner', status: UserStatus.ACTIVE }
+      user: { id: 'user_1', email: 'owner@example.com', displayName: 'Owner', status: UserStatus.ACTIVE, passwordHash: 'hash', ownerOnboardingSelectedAt: null, professionalProfile: null, adminAccess: null, memberships: [{ salonId: 'salon_1' }] }
     };
     const create = jest.fn().mockResolvedValue({ id: 'new_session' });
     const update = jest.fn().mockResolvedValue({});
@@ -65,7 +65,7 @@ describe('AuthService refresh rotation', () => {
           familyId: 'family_1',
           expiresAt: futureDate(),
           revokedAt: new Date(),
-          user: { id: 'user_1', email: 'owner@example.com', displayName: 'Owner', status: UserStatus.ACTIVE }
+          user: { id: 'user_1', email: 'owner@example.com', displayName: 'Owner', status: UserStatus.ACTIVE, passwordHash: 'hash', ownerOnboardingSelectedAt: null, professionalProfile: null, adminAccess: null, memberships: [{ salonId: 'salon_1' }] }
         }),
         create: jest.fn(),
         update: jest.fn(),
@@ -96,7 +96,7 @@ describe('AuthService refresh rotation', () => {
           familyId: 'family_1',
           expiresAt: futureDate(),
           revokedAt: null,
-          user: { id: 'user_1', email: 'owner@example.com', displayName: 'Owner', status: UserStatus.ACTIVE }
+          user: { id: 'user_1', email: 'owner@example.com', displayName: 'Owner', status: UserStatus.ACTIVE, passwordHash: 'hash', ownerOnboardingSelectedAt: null, professionalProfile: null, adminAccess: null, memberships: [{ salonId: 'salon_1' }] }
         }),
         create,
         update: jest.fn(),
@@ -163,5 +163,49 @@ describe('AuthService refresh rotation', () => {
       }
     });
     expect(auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ action: 'PROFESSIONAL_ONBOARDING_STARTED', requestId: 'registration_1' }) });
+  });
+
+  it('persists the Owner journey and returns Owner navigation capability at registration', async () => {
+    const userCreate = jest.fn().mockResolvedValue({ id: 'owner_1', email: 'owner@example.com', displayName: 'Owner' });
+    const tx = {
+      user: { create: userCreate },
+      authSession: { create: jest.fn().mockResolvedValue({ id: 'session_1' }) },
+      auditEvent: { create: jest.fn().mockResolvedValue({}) }
+    };
+    const prisma = {
+      user: { findUnique: jest.fn().mockResolvedValue(null) },
+      $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx))
+    } as unknown as PrismaService;
+    const passwordService = { hash: jest.fn().mockResolvedValue('hash') } as unknown as PasswordService;
+    const service = new AuthService(prisma, passwordService, accessTokens, config);
+
+    const result = await service.register({ email: 'owner@example.com', displayName: 'Owner', password: 'Mvp#2026', onboardingIntent: 'OWNER' });
+
+    expect(userCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ ownerOnboardingSelectedAt: expect.any(Date) }) });
+    expect(result.authentication.capabilities).toEqual({ professionalStatus: null, owner: true, admin: false });
+  });
+
+  it('derives restored navigation capabilities from authoritative account relations', async () => {
+    const user = {
+      id: 'multi_role_1', email: 'multi@example.com', displayName: 'Multi Role', passwordHash: 'hash', status: UserStatus.ACTIVE,
+      ownerOnboardingSelectedAt: null,
+      professionalProfile: { status: ProfessionalProfileStatus.ACTIVE },
+      adminAccess: { userId: 'multi_role_1' },
+      memberships: [{ salonId: 'salon_1' }]
+    };
+    const tx = {
+      authSession: { create: jest.fn().mockResolvedValue({ id: 'session_1' }) },
+      auditEvent: { create: jest.fn().mockResolvedValue({}) }
+    };
+    const prisma = {
+      user: { findUnique: jest.fn().mockResolvedValue(user) },
+      $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx))
+    } as unknown as PrismaService;
+    const passwordService = { verify: jest.fn().mockResolvedValue(true) } as unknown as PasswordService;
+    const service = new AuthService(prisma, passwordService, accessTokens, config);
+
+    const result = await service.login({ email: user.email, password: 'Mvp#2026' });
+
+    expect(result.authentication.capabilities).toEqual({ professionalStatus: ProfessionalProfileStatus.ACTIVE, owner: true, admin: true });
   });
 });
