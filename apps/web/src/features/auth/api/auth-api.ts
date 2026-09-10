@@ -19,6 +19,10 @@ export function login(input: LoginInput): Promise<AuthenticationResponse> {
   return postJson<AuthenticationResponse>('/auth/login', input);
 }
 
+export function enableOwner(accessToken: string): Promise<AuthenticationResponse> {
+  return postJson<AuthenticationResponse>('/auth/owner-onboarding', {}, accessToken);
+}
+
 export function refreshSession(): Promise<AuthenticationResponse> {
   return postJson<AuthenticationResponse>('/auth/refresh', {});
 }

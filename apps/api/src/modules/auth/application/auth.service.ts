@@ -116,6 +116,24 @@ export class AuthService {
     return this.toAuthenticationResponse(user, refresh, this.capabilitiesFor(user));
   }
 
+  async enableOwner(userId: string, requestId?: string): Promise<AuthSessionResult> {
+    const result = await this.prisma.$transaction(async (tx) => {
+      const current = await tx.user.findUnique({ where: { id: userId }, select: { id: true, status: true } });
+      if (!current || current.status !== UserStatus.ACTIVE) throw new UnauthorizedException('Your account is not active.');
+
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { ownerOnboardingSelectedAt: new Date() },
+        select: sessionUserSelection
+      });
+      const refresh = await this.createRefreshSession(tx, user.id);
+      await this.writeAudit(tx, user.id, 'OWNER_ONBOARDING_ENABLED', requestId);
+      return { user, refresh };
+    });
+
+    return this.toAuthenticationResponse(result.user, result.refresh, this.capabilitiesFor(result.user));
+  }
+
   async refresh(refreshToken: string, requestId?: string): Promise<AuthSessionResult> {
     const refreshTokenHash = this.config.hashRefreshToken(refreshToken);
     const result = await this.prisma.$transaction(async (tx) => {

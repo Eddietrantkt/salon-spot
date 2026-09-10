@@ -208,4 +208,27 @@ describe('AuthService refresh rotation', () => {
 
     expect(result.authentication.capabilities).toEqual({ professionalStatus: ProfessionalProfileStatus.ACTIVE, owner: true, admin: true });
   });
+
+  it('enables Owner access for an active signed-in account and rotates its session', async () => {
+    const ownerUser = {
+      id: 'professional_1', email: 'professional@example.com', displayName: 'Professional', passwordHash: 'hash', status: UserStatus.ACTIVE,
+      ownerOnboardingSelectedAt: new Date(), professionalProfile: { status: ProfessionalProfileStatus.ACTIVE }, adminAccess: null, memberships: []
+    };
+    const findUnique = jest.fn().mockResolvedValue({ id: ownerUser.id, status: UserStatus.ACTIVE });
+    const update = jest.fn().mockResolvedValue(ownerUser);
+    const auditCreate = jest.fn().mockResolvedValue({});
+    const tx = {
+      user: { findUnique, update },
+      authSession: { create: jest.fn().mockResolvedValue({ id: 'session_1' }) },
+      auditEvent: { create: auditCreate }
+    };
+    const prisma = { $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)) } as unknown as PrismaService;
+    const service = new AuthService(prisma, passwords, accessTokens, config);
+
+    const result = await service.enableOwner(ownerUser.id, 'owner_upgrade_1');
+
+    expect(update).toHaveBeenCalledWith({ where: { id: ownerUser.id }, data: { ownerOnboardingSelectedAt: expect.any(Date) }, select: expect.any(Object) });
+    expect(result.authentication.capabilities.owner).toBe(true);
+    expect(auditCreate).toHaveBeenCalledWith({ data: expect.objectContaining({ action: 'OWNER_ONBOARDING_ENABLED', requestId: 'owner_upgrade_1' }) });
+  });
 });

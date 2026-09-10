@@ -11,9 +11,9 @@ import { SalonReviewsPanel } from '../../reviews/components/salon-reviews-panel'
 import { BookingDateStrip } from '../components/booking-date-strip';
 import { WorkspaceMediaGallery } from '../components/workspace-media-gallery';
 
-interface WorkspaceBookingPageProps { workspaceId: string; date: string; initialSession: AuthenticationResponse | null; sessionResolved: boolean; onBack: () => void; onDateChange: (date: string) => void; onSignIn: () => void; onSessionRestored: (session: AuthenticationResponse) => void; onSessionEnded: () => void; }
+interface WorkspaceBookingPageProps { workspaceId: string; date: string; initialSession: AuthenticationResponse | null; sessionResolved: boolean; onBack: () => void; onViewBookings: () => void; onDateChange: (date: string) => void; onSignIn: () => void; onSessionRestored: (session: AuthenticationResponse) => void; onSessionEnded: () => void; }
 
-export function WorkspaceBookingPage({ workspaceId, date, initialSession, sessionResolved, onBack, onDateChange, onSignIn, onSessionEnded }: WorkspaceBookingPageProps): JSX.Element {
+export function WorkspaceBookingPage({ workspaceId, date, initialSession, sessionResolved, onBack, onViewBookings, onDateChange, onSignIn, onSessionEnded }: WorkspaceBookingPageProps): JSX.Element {
   const { locale, t } = useI18n();
   const intlLocale = locale === 'vi' ? 'vi-VN' : 'en-GB';
   const [detail, setDetail] = useState<WorkspaceDetailResponse | null>(null);
@@ -26,6 +26,7 @@ export function WorkspaceBookingPage({ workspaceId, date, initialSession, sessio
   const [isActioning, setIsActioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [completedBooking, setCompletedBooking] = useState<BookingSummary | null>(null);
   const holdAttempt = useRef<{ slotId: string; key: string } | null>(null);
   const confirmKeys = useRef(new Map<string, string>());
 
@@ -78,6 +79,7 @@ export function WorkspaceBookingPage({ workspaceId, date, initialSession, sessio
       const response = await confirmHold(auth.accessToken, hold.id, confirmKey);
       setBookings((current) => [response.booking, ...current.filter((booking) => booking.id !== response.booking.id)]);
       setHolds((current) => current.filter((item) => item.id !== hold.id)); confirmKeys.current.delete(hold.id);
+      setCompletedBooking(response.booking);
       setMessage(t('Workspace reserved successfully. Your booking is confirmed.', 'Đặt không gian thành công. Lịch đặt của bạn đã được xác nhận.'));
       await loadDetail();
     } catch (reason) { setError(localizedErrorMessage(reason, t)); }
@@ -104,6 +106,11 @@ export function WorkspaceBookingPage({ workspaceId, date, initialSession, sessio
     <button className="text-button" type="button" onClick={onBack}>← {t('Back to search results', 'Quay lại kết quả tìm kiếm')}</button>
     {error && <p className="notice error" role="alert">{error}</p>}
     {message && <p className="notice success" role="status">{message}</p>}
+    {completedBooking && <section className="booking-success-panel" aria-labelledby="booking-success-heading">
+      <div><p className="eyebrow">{t('BOOKING CONFIRMED', 'ĐÃ XÁC NHẬN LỊCH ĐẶT')}</p><h2 id="booking-success-heading">{t('You are all set.', 'Bạn đã hoàn tất.')}</h2><p>{t('Your time is reserved. Keep this reference for your records.', 'Khung giờ đã được giữ thành công. Hãy lưu mã này để tra cứu.')}</p></div>
+      <div className="booking-success-summary"><strong>#{completedBooking.id.slice(-8).toUpperCase()}</strong><span>{completedBooking.workspaceName}</span><small>{formatSalonLocalDate(completedBooking.localDate, intlLocale)} · {formatSalonTimeRange(completedBooking.startsAt, completedBooking.endsAt, completedBooking.salonTimezone, intlLocale)} · {formatVnd(completedBooking.priceCents, locale)}</small></div>
+      <div className="access-actions"><button type="button" onClick={onViewBookings}>{t('View my bookings', 'Xem lịch đặt của tôi')}</button><button className="text-button" type="button" onClick={onBack}>{t('Explore more spaces', 'Khám phá thêm không gian')}</button></div>
+    </section>}
     {isLoading ? <p className="notice">{t('Loading available times…', 'Đang tải giờ còn trống…')}</p> : detail && <>
       <header><p className="eyebrow">{detail.area} · {detail.timezone}</p><h1>{title}</h1><p className="lead">{detail.salonName} · {formatSalonLocalDate(date, intlLocale)}</p></header>
       <WorkspaceMediaGallery media={detail.media} workspaceName={title} salonName={detail.salonName} />

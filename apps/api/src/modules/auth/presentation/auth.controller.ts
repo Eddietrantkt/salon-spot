@@ -49,6 +49,15 @@ export class AuthController {
     return session.authentication;
   }
 
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(200)
+  @Post('owner-onboarding')
+  async enableOwner(@CurrentUser() user: AuthenticatedUser, @Res({ passthrough: true }) response: CookieResponse, @RequestId() requestId?: string): Promise<AuthenticationResponse> {
+    const session = await this.auth.enableOwner(user.id, requestId);
+    this.setRefreshCookie(response, session.refreshToken, session.refreshTokenExpiresAt);
+    return session.authentication;
+  }
+
   @HttpCode(204)
   @Post('logout')
   async logout(@Headers('cookie') cookie: string | undefined, @Res({ passthrough: true }) response: CookieResponse, @RequestId() requestId?: string): Promise<void> {

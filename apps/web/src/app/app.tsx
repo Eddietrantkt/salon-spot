@@ -10,7 +10,7 @@ import { ProfessionalOnboardingPage } from '../features/professionals/pages/prof
 import { NotificationsPage } from '../features/notifications/pages/notifications-page';
 import { getNotificationUnreadCount } from '../features/notifications/api/notifications-api';
 import { notificationTargetPath } from '../features/notifications/notification-copy';
-import { logout, refreshSession } from '../features/auth/api/auth-api';
+import { enableOwner as enableOwnerAccess, logout, refreshSession } from '../features/auth/api/auth-api';
 import { ApiRequestError } from '../shared/api/http';
 import { tomorrowInLocalCalendar } from '../shared/date/local-date';
 import { LanguageSwitcher } from '../shared/i18n/language-switcher';
@@ -92,6 +92,7 @@ export function App(): JSX.Element {
           {(navigation.includes('professional-onboarding') || navigation.includes('owner') || navigation.includes('admin')) && <details className="nav-more" open={route.name === 'professional-onboarding' || route.name === 'owner' || route.name === 'admin'}><summary>{t('Workspace', 'Khu vực')}</summary><div className="nav-more-menu">
             {navigation.includes('professional-onboarding') && <NavigationLink active={route.name === 'professional-onboarding'} to="/professional/onboarding" onNavigate={navigate}><Icon name="user" size={16} />{t('Professional profile', 'Hồ sơ chuyên viên')}</NavigationLink>}
             {navigation.includes('owner') && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}><Icon name="store" size={16} />{t('Owner', 'Chủ salon')}</NavigationLink>}
+            {session && !session.capabilities.owner && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}><Icon name="store" size={16} />{t('Set up Owner access', 'Mở quyền Chủ salon')}</NavigationLink>}
             {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}><Icon name="shield" size={16} />{t('Admin', 'Quản trị')}</NavigationLink>}
           </div></details>}
           {session ? <div className="account-status"><span aria-live="polite"><strong>{t('Hi', 'Xin chào')}, {session.user.displayName}</strong><small>{accountContext(session, route.name, t)}</small></span><button className="text-button" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
@@ -142,7 +143,7 @@ function renderRoute(
     const date = route.search.get('date') ?? tomorrowInLocalCalendar();
     const area = route.search.get('area');
     const returnTo = area ? `/?${new URLSearchParams({ area, date })}` : '/';
-    return <WorkspaceBookingPage workspaceId={route.workspaceId} date={date} initialSession={session} sessionResolved={isSessionResolved} onBack={() => navigate(returnTo)} onDateChange={(nextDate) => navigate(workspacePath(route.workspaceId!, area, nextDate))} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
+    return <WorkspaceBookingPage workspaceId={route.workspaceId} date={date} initialSession={session} sessionResolved={isSessionResolved} onBack={() => navigate(returnTo)} onViewBookings={() => navigate('/bookings')} onDateChange={(nextDate) => navigate(workspacePath(route.workspaceId!, area, nextDate))} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   }
 
   if (route.name === 'bookings') {
@@ -160,7 +161,7 @@ function renderRoute(
   if (route.name === 'owner') {
     if (!isSessionResolved) return <SessionLoadingPage t={t} />;
     if (!session) return <SignInRequiredPage destination="owner" onSignIn={() => openLogin(currentPath)} onExplore={() => navigate('/')} t={t} />;
-    if (!canAccessRoleRoute('owner', session)) return <RoleAccessDeniedPage onExplore={() => navigate('/')} t={t} />;
+    if (!canAccessRoleRoute('owner', session)) return <OwnerAccessUpgradePage session={session} onUpgraded={setSession} onExplore={() => navigate('/')} t={t} />;
     return <OwnerConsolePage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} />;
   }
   if (route.name === 'admin') {
@@ -201,6 +202,20 @@ function SignInRequiredPage({ destination, onSignIn, onExplore, t }: { destinati
 
 function RoleAccessDeniedPage({ onExplore, t }: { onExplore: () => void; t: Translate }): JSX.Element {
   return <main className="page-shell access-shell"><section className="access-card"><p className="eyebrow">{t('ACCESS LIMITED', 'GIỚI HẠN TRUY CẬP')}</p><h1>{t('This area is not assigned to your account', 'Khu vực này không thuộc quyền của tài khoản')}</h1><p className="lead">{t('Only accounts with the matching server-issued capability can open this area. Your current session is still active.', 'Chỉ tài khoản có đúng quyền do máy chủ cấp mới có thể mở khu vực này. Phiên đăng nhập hiện tại của bạn vẫn được giữ nguyên.')}</p><div className="access-actions"><button type="button" onClick={onExplore}>{t('Return to Explore', 'Quay lại Khám phá')}</button></div></section></main>;
+}
+
+function OwnerAccessUpgradePage({ session, onUpgraded, onExplore, t }: { session: AuthenticationResponse; onUpgraded: (session: AuthenticationResponse) => void; onExplore: () => void; t: Translate }): JSX.Element {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function enableOwner(): Promise<void> {
+    setIsLoading(true); setError(null);
+    try { onUpgraded(await enableOwnerAccess(session.accessToken)); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : t('We could not enable Owner access.', 'Không thể mở quyền Chủ salon.')); }
+    finally { setIsLoading(false); }
+  }
+
+  return <main className="page-shell access-shell"><section className="access-card owner-upgrade-card"><p className="eyebrow">{t('OWNER JOURNEY', 'HÀNH TRÌNH CHỦ SALON')}</p><h1>{t('Turn your account into a working salon space.', 'Biến tài khoản của bạn thành một không gian salon có thể vận hành.')}</h1><p className="lead">{t('Enable Owner access to create a salon, add workspaces and photos, publish listings, and open rental availability.', 'Mở quyền Chủ salon để tạo salon, thêm không gian và ảnh, công bố listing, rồi mở lịch thuê.')}</p><ul className="owner-upgrade-steps"><li>{t('Create or manage your salon details', 'Tạo hoặc quản lý thông tin salon')}</li><li>{t('Add photos, pricing and rental options', 'Thêm ảnh, giá và gói thuê')}</li><li>{t('Publish only after the checklist is complete', 'Chỉ công bố sau khi hoàn tất danh sách kiểm tra')}</li></ul>{error && <p className="notice error" role="alert">{error}</p>}<div className="access-actions"><button type="button" disabled={isLoading} onClick={() => void enableOwner()}>{isLoading ? t('Enabling…', 'Đang mở quyền…') : t('Enable Owner access', 'Mở quyền Chủ salon')}</button><button className="text-button" type="button" onClick={onExplore}>{t('Back to Explore', 'Quay lại Khám phá')}</button></div></section></main>;
 }
 
 function accountContext(session: AuthenticationResponse, routeName: RouteName, t: Translate): string {

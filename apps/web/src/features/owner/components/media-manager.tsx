@@ -1,6 +1,8 @@
 import { useRef, type ChangeEvent, type JSX } from 'react';
 import type { OwnerMedia } from '@salon-spot/contracts';
 import { useI18n } from '../../../shared/i18n/i18n-provider';
+import { fallbackImageFor } from '../../../shared/ui/media-fallbacks';
+import { ResilientImage } from '../../../shared/ui/resilient-image';
 
 interface MediaManagerProps {
   title: string;
@@ -44,7 +46,7 @@ export function MediaManager({ title, media, isLoading, onUpload, onSetCover, on
         <ul className="media-grid">
           {media.map((item, index) => (
             <li key={item.id}>
-              {item.url ? <img src={item.url} alt={`${title} ${index + 1}`} /> : <div className="media-placeholder">{item.status}</div>}
+              {item.url ? <ResilientImage src={item.url} fallbackSrc={fallbackImageFor(`${title}-${index}`)} alt={`${title} ${index + 1}`} /> : <div className="media-placeholder">{item.status}</div>}
               <div className="media-meta"><span>{item.isCover ? t('COVER', 'ẢNH BÌA') : item.status}</span>{item.failureReason && <small>{item.failureReason}</small>}</div>
               <div className="media-actions">
                 {item.status === 'READY' && <button disabled={isLoading || item.isCover} type="button" onClick={() => void onSetCover(item.id)}>{t('Set cover', 'Đặt làm ảnh bìa')}</button>}

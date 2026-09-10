@@ -250,3 +250,10 @@ textarea:focus-visible { outline: 3px solid #b89340; outline-offset: 2px; }
 .discovery-hero { background: radial-gradient(circle at 18% 8%, rgb(255 255 255 / 75%) 0 2%, transparent 18%), radial-gradient(circle at 82% 16%, rgb(226 205 180 / 26%), transparent 30%), #fbfaf7; }
 @keyframes explore-ambient-drift { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -1%, 0); } }
 @media (prefers-reduced-motion: no-preference) { .discovery-shell::before { animation: explore-ambient-drift 16s ease-in-out infinite; } }
+
+.booking-success-panel { display: grid; gap: 18px; padding: 24px; margin: 24px 0 30px; border: 1px solid #afd0bc; border-radius: var(--radius-md); background: linear-gradient(135deg, #f1f8f3, #fffaf2); box-shadow: var(--shadow-card); }
+.booking-success-panel h2 { margin-bottom: 6px; }
+.booking-success-panel p:not(.eyebrow) { margin: 0; color: var(--muted); }
+.booking-success-summary { display: grid; gap: 5px; padding: 14px 16px; border-radius: var(--radius-sm); background: rgb(255 255 255 / 72%); }
+.booking-success-summary strong { color: var(--success); font-size: 1.25rem; letter-spacing: .08em; }
+.booking-success-summary small { color: var(--muted); }
