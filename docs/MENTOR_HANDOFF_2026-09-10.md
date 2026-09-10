@@ -40,9 +40,13 @@ không dùng kết quả host đó để thay thế bằng chứng Node 24/conta
   confirm booking; booking mới tồn tại sau logout/login lại.
 - Admin xem metrics, account search, audit và outbox; booking mới tăng số
   confirmed và giảm slot open đúng kỳ vọng.
-- Notification inbox và worker heartbeat cần kiểm tra lại sau deploy commit có
-  worker đồng-located; không coi booking thành công là bằng chứng notification
-  đã delivered.
+- Sau deploy `4ebcd5a`, Render log xác nhận cả 4 worker đăng ký trong API
+  process; `notification-delivery` đã xử lý backlog. Worker readiness endpoint
+  trả HTTP 200 sau startup grace.
+- Admin Console xác nhận `0 pending · 0 failed` và cả 4 worker đều `HEALTHY`.
+  Professional inbox xác nhận 5 notification unread sau khi đăng nhập lại.
+- Booking thành công chỉ được coi là hoàn tất notification khi đồng thời có
+  bằng chứng outbox `DELIVERED`, heartbeat khỏe và item xuất hiện trong inbox.
 
 ## Những điểm chỉ thuần POC, cần nói rõ với mentor
 
