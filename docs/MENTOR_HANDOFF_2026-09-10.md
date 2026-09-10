@@ -1,7 +1,8 @@
 # Mentor handoff — hosted POC and verification notes
 
 Ngày cập nhật: 2026-09-10  
-Candidate: `46232d3` trên nhánh `codex/vercel-render-aiven-poc`
+Code candidate: `4ebcd5a`; handoff documentation: `aefb183` trên nhánh
+`codex/vercel-render-aiven-poc`
 
 ## Kết luận ngắn
 
