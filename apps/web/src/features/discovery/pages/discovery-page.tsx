@@ -22,7 +22,7 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
   const [date, setDate] = useState(initialDate || tomorrowInLocalCalendar);
   const [items, setItems] = useState<WorkspaceSearchItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [hasSearched, setHasSearched] = useState(initialHasSearched);
   const resultsLocationInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,7 +60,7 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
       setItems(response.data);
     } catch (reason) {
       setItems([]);
-      setError(localizedErrorMessage(reason, t));
+      setError(reason);
     } finally {
       setIsLoading(false);
     }

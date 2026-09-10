@@ -1,9 +1,10 @@
 import type { JSX } from 'react';
 import { searchFeedbackAction, searchFeedbackMessage } from '../search-feedback-state';
 import { useI18n } from '../../../shared/i18n/i18n-provider';
+import { localizedErrorMessage } from '../../../shared/i18n/localized-error-message';
 
 interface SearchFeedbackProps {
-  error: string | null;
+  error: unknown;
   hasSearched: boolean;
   isLoading: boolean;
   hasItems: boolean;
@@ -12,7 +13,7 @@ interface SearchFeedbackProps {
 
 export function SearchFeedback({ error, hasSearched, isLoading, hasItems, onRefineSearch }: SearchFeedbackProps): JSX.Element | null {
   const { t } = useI18n();
-  if (error) return <p className="notice error" role="alert">{error}</p>;
+  if (error) return <p className="notice error" role="alert">{localizedErrorMessage(error, t)}</p>;
   const message = searchFeedbackMessage({ hasSearched, hasItems, isLoading });
   const localized = message === 'Choose a location and date to see live workspace availability.'
     ? t(message, 'Chọn địa điểm và ngày để xem lịch trống trực tiếp.')

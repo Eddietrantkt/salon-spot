@@ -30,7 +30,7 @@ export function LoginPage({ destination, onAuthenticated, onBack }: LoginPagePro
   const [password, setPassword] = useState('');
   const [onboardingIntent, setOnboardingIntent] = useState<RegistrationIntent>('PROFESSIONAL');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const copy = destinationCopy[destination];
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -42,7 +42,7 @@ export function LoginPage({ destination, onAuthenticated, onBack }: LoginPagePro
       const session = request.mode === 'login' ? await login(request.input) : await register(request.input);
       onAuthenticated(session, request.mode === 'register' ? onboardingIntent : undefined);
     } catch (reason) {
-      setError(localizedErrorMessage(reason, t));
+      setError(reason);
     } finally {
       setIsSubmitting(false);
     }
@@ -68,7 +68,7 @@ export function LoginPage({ destination, onAuthenticated, onBack }: LoginPagePro
             {mode === 'login' ? t('Create account', 'Tạo tài khoản') : t('Sign in instead', 'Chuyển sang đăng nhập')}
           </button>
         </div>
-        {error && <p className="notice error" role="alert">{error}</p>}
+        {error !== null && <p className="notice error" role="alert">{localizedErrorMessage(error, t)}</p>}
         <form className="owner-form" onSubmit={submit}>
           {mode === 'register' && <label>{t('Full name', 'Họ và tên')}<input required autoComplete="name" maxLength={120} value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>}
           {mode === 'register' && <fieldset className="role-picker"><legend>{t('How would you like to start?', 'Bạn muốn bắt đầu với vai trò nào?')}</legend><label className={onboardingIntent === 'PROFESSIONAL' ? 'role-choice role-choice-selected' : 'role-choice'}><input type="radio" name="onboardingIntent" value="PROFESSIONAL" checked={onboardingIntent === 'PROFESSIONAL'} onChange={() => setOnboardingIntent('PROFESSIONAL')} /><span><strong>{t('Beauty Professional', 'Chuyên viên làm đẹp')}</strong><small>{t('Build your profile first. Booking access is activated after review.', 'Hoàn thiện hồ sơ trước. Quyền đặt chỗ được kích hoạt sau khi duyệt.')}</small></span></label><label className={onboardingIntent === 'OWNER' ? 'role-choice role-choice-selected' : 'role-choice'}><input type="radio" name="onboardingIntent" value="OWNER" checked={onboardingIntent === 'OWNER'} onChange={() => setOnboardingIntent('OWNER')} /><span><strong>{t('Salon Owner', 'Chủ salon')}</strong><small>{t('Set up your first salon and workspace after account creation.', 'Thiết lập salon và không gian đầu tiên sau khi tạo tài khoản.')}</small></span></label></fieldset>}
