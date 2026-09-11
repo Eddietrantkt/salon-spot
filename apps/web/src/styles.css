@@ -265,7 +265,7 @@ textarea:focus-visible { outline: 3px solid #b89340; outline-offset: 2px; }
 @media (max-width: 1120px) and (min-width: 761px) { .site-header .app-nav { overflow: hidden; } }
 
 /* Give the Explore search card a stronger planning hierarchy. */
-.search-form-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid #eee7df; }
+.search-form-header { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid #eee7df; }
 .search-form-header > div { display: grid; gap: 4px; }
 .search-form-kicker { color: var(--accent); font-size: .65rem; font-weight: 900; letter-spacing: .12em; }
 .search-form-header strong { color: var(--ink); font-family: Lora, Georgia, serif; font-size: 1.18rem; font-weight: 600; line-height: 1.1; }

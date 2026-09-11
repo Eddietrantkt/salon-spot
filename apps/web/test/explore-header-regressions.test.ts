@@ -9,6 +9,7 @@ test('desktop navigation hides the native scrollbar beside account actions', () 
   assert.match(styles, /\.app-nav\s*\{[^}]*scrollbar-width:\s*none/s);
   assert.match(styles, /\.app-nav::-webkit-scrollbar\s*\{[^}]*display:\s*none/s);
   assert.match(styles, /\.account-signout\s*\{[^}]*flex:\s*0 0 auto/s);
+  assert.match(styles, /\.search-form-header\s*\{[^}]*grid-column:\s*1 \/ -1/s);
 });
 
 test('Explore search card has a clear planning header', () => {
