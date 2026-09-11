@@ -1,8 +1,8 @@
 
 # The Salon Spot — Runbook, môi trường và lý do hiện vẫn là POC
 
-Ngày lập: 11/09/2026  
-Phạm vi: checkout D:/downloadD/salon_spot, candidate UI d8350217c0e4d7dfe6646dd4e5068bbe8553190c  
+Ngày lập: 11/09/2026
+Phạm vi: checkout D:/downloadD/salon_spot, candidate UI d8350217c0e4d7dfe6646dd4e5068bbe8553190c
 Hosted demo: https://salon-spot-web-poc.vercel.app/
 
 > Tài liệu này mô tả cách chạy và ranh giới bằng chứng của hệ thống hiện tại. Nó không phải tuyên bố rằng hosted demo đã đạt production readiness.
@@ -285,4 +285,3 @@ Trong audit hiện tại chỉ chọn slot trên UI để xác minh bước chuy
 The Salon Spot hiện là một **functional workflow POC** có web hosted chạy được, API/DB flow đã có nhiều bằng chứng tốt và local packaged runtime có thể tái lập. Nó chưa phải production vì hạ tầng free/ephemeral, worker workaround, release identity chưa chặt, browser gate còn fail, fixture reference còn drift và các dịch vụ production như payment/email/storage/monitoring/HA chưa hoàn chỉnh.
 
 Chênh lệch UI quan sát trên web hiện được giải thích hợp lý nhất bởi state/môi trường/deployment evidence chưa được khóa cùng nhau; asset hash hosted đang khớp local build đã kiểm tra. Không nên sửa UI theo cảm nhận trước khi đối chiếu đủ SHA, locale, session, viewport, route và API response.
-
