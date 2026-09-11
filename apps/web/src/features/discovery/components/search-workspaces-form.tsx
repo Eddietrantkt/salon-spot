@@ -41,6 +41,10 @@ export function SearchWorkspacesForm({
 
   return (
     <form className={`search-form search-form-${variant}${isLoading ? ' search-form-loading' : ''}`} onSubmit={onSubmit} aria-busy={isLoading}>
+      {variant === 'hero' && <div className="search-form-header">
+        <div><span className="search-form-kicker">{t('SESSION PLANNER', 'LÊN KẾ HOẠCH')}</span><strong>{t('Plan your next session', 'Lên kế hoạch cho buổi làm việc')}</strong></div>
+        <span className="search-form-status"><span className="search-live-dot" aria-hidden="true" />{t('Live', 'Trực tiếp')}</span>
+      </div>}
       <div className={`search-field search-location-field${activeField === 'location' ? ' search-field-active' : ''}`}>
         <span className="search-field-icon"><Icon name="map-pin" /></span>
         <label>

@@ -257,3 +257,18 @@ textarea:focus-visible { outline: 3px solid #b89340; outline-offset: 2px; }
 .booking-success-summary { display: grid; gap: 5px; padding: 14px 16px; border-radius: var(--radius-sm); background: rgb(255 255 255 / 72%); }
 .booking-success-summary strong { color: var(--success); font-size: 1.25rem; letter-spacing: .08em; }
 .booking-success-summary small { color: var(--muted); }
+
+/* Keep desktop account actions clean when the navigation row gets tight. */
+.app-nav { scrollbar-width: none; }
+.app-nav::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.account-signout { flex: 0 0 auto; overflow: visible; }
+@media (max-width: 1120px) and (min-width: 761px) { .site-header .app-nav { overflow: hidden; } }
+
+/* Give the Explore search card a stronger planning hierarchy. */
+.search-form-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid #eee7df; }
+.search-form-header > div { display: grid; gap: 4px; }
+.search-form-kicker { color: var(--accent); font-size: .65rem; font-weight: 900; letter-spacing: .12em; }
+.search-form-header strong { color: var(--ink); font-family: Lora, Georgia, serif; font-size: 1.18rem; font-weight: 600; line-height: 1.1; }
+.search-form-status { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid #c8d8cb; border-radius: 999px; background: #f1f8f3; color: var(--success); font-size: .68rem; font-weight: 800; }
+.search-form-status .search-live-dot { width: 6px; height: 6px; }
+@media (max-width: 760px) { .search-form-header { align-items: start; flex-direction: column; }.search-form-status { align-self: start; } }

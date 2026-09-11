@@ -95,7 +95,7 @@ export function App(): JSX.Element {
             {session && !session.capabilities.owner && <NavigationLink active={route.name === 'owner'} to="/owner" onNavigate={navigate}><Icon name="store" size={16} />{t('Set up Owner access', 'Mở quyền Chủ salon')}</NavigationLink>}
             {navigation.includes('admin') && <NavigationLink active={route.name === 'admin'} to="/admin" onNavigate={navigate}><Icon name="shield" size={16} />{t('Admin', 'Quản trị')}</NavigationLink>}
           </div></details>}
-          {session ? <div className="account-status"><span aria-live="polite"><strong>{t('Hi', 'Xin chào')}, {session.user.displayName}</strong><small>{accountContext(session, route.name, t)}</small></span><button className="text-button" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
+          {session ? <div className="account-status"><span aria-live="polite"><strong>{t('Hi', 'Xin chào')}, {session.user.displayName}</strong><small>{accountContext(session, route.name, t)}</small></span><button className="text-button account-signout" type="button" onClick={() => void signOut()}>{t('Sign out', 'Đăng xuất')}</button></div> : navigation.includes('login') && <NavigationLink active={route.name === 'login'} to="/login" onNavigate={navigate}>{t('Sign in', 'Đăng nhập')}</NavigationLink>}
         </nav>
         <LanguageSwitcher />
       </header>
