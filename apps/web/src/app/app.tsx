@@ -156,7 +156,7 @@ function renderRoute(
   if (route.name === 'notifications') {
     if (!isSessionResolved) return <SessionLoadingPage t={t} />;
     if (!session) return <SignInRequiredPage destination="notifications" onSignIn={() => openLogin(currentPath)} onExplore={() => navigate('/')} t={t} />;
-    return <NotificationsPage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} onUnreadCountChange={setNotificationUnreadCount} onOpenNotification={(notification) => navigate(notificationTargetPath(notification))} />;
+    return <NotificationsPage initialSession={session} onSignIn={() => openLogin(currentPath)} onSessionRestored={setSession} onSessionEnded={() => setSession(null)} onUnreadCountChange={setNotificationUnreadCount} onOpenNotification={(notification) => navigate(notificationTargetPath(notification))} onOpenOwner={() => navigate('/owner')} />;
   }
   if (route.name === 'owner') {
     if (!isSessionResolved) return <SessionLoadingPage t={t} />;

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "node --test test/media-state.test.ts test/search-feedback-state.test.ts test/auth-request.test.ts test/booking-session-state.test.ts test/booking-date-strip.test.ts test/format-salon-time.test.ts test/http.test.ts test/locale.test.ts test/notification-copy.test.ts test/session-access.test.ts test/discovery-layout.test.ts test/product-ux-regressions.test.ts",
+    "test": "node --test test/media-state.test.ts test/search-feedback-state.test.ts test/auth-request.test.ts test/booking-session-state.test.ts test/booking-date-strip.test.ts test/format-salon-time.test.ts test/http.test.ts test/locale.test.ts test/notification-copy.test.ts test/session-access.test.ts test/discovery-layout.test.ts test/notifications-owner-cta.test.ts test/product-ux-regressions.test.ts",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit"
