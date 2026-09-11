@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const demoPassword = 'SalonDemo#2026';
+const ownerPublishPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
 
 async function signIn(page: Page, email: string): Promise<void> {
   await page.getByLabel('Email').fill(email);
@@ -39,6 +40,49 @@ test('Owner session persists while the Admin console rejects its unavailable cap
   await page.goto('/admin');
   await expect(page.getByRole('heading', { name: 'This area is not assigned to your account' })).toBeVisible();
   await expect(page.getByText('Hi, Linh Nguyen — Owner Demo')).toBeVisible();
+});
+
+test('Owner can create, publish, open availability, and expose a workplace to Explore', async ({ page }) => {
+  const suffix = Date.now();
+  const salonName = `QA Salon ${suffix}`;
+  const workspaceName = `QA Workspace ${suffix}`;
+  const area = `QA-D1-${suffix}`;
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  const localDate = date.toISOString().slice(0, 10);
+
+  await page.goto('/owner');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await signIn(page, 'owner.demo@salonspot.local');
+  await expect(page.getByText('Linh Nguyen — Owner Demo')).toBeVisible();
+
+  await page.getByLabel('Salon name').fill(salonName);
+  await page.getByLabel('Location').fill(area);
+  await page.getByLabel('Workspace name').fill(workspaceName);
+  await page.getByLabel('Rental label').fill('QA session');
+  await page.getByLabel('Rate (VND)').fill('300000');
+  await page.getByRole('button', { name: 'Create salon & workspace' }).click();
+
+  await expect(page.getByText(`${salonName} and its first workspace were created in DRAFT.`)).toBeVisible();
+  const salonCard = page.locator('.salon-card').filter({ hasText: salonName });
+  const workspaceItem = salonCard.locator('.workspace-list > li').filter({ hasText: workspaceName });
+  await expect(workspaceItem.getByText('DRAFT')).toBeVisible();
+
+  const mediaInputs = workspaceItem.locator('input[type="file"]');
+  await expect(mediaInputs).toHaveCount(1);
+  await mediaInputs.setInputFiles({ name: 'qa-workspace.png', mimeType: 'image/png', buffer: ownerPublishPng });
+  await expect(page.getByText('The photo was validated, processed, and is READY.')).toBeVisible();
+
+  await workspaceItem.getByRole('button', { name: 'Review & publish' }).click();
+  await expect(page.getByText('The workspace passed the checklist and was published.')).toBeVisible();
+  await expect(workspaceItem.getByText('PUBLISHED')).toBeVisible();
+
+  await workspaceItem.getByRole('button', { name: 'Open 1 slot' }).click();
+  await expect(workspaceItem.getByRole('status')).toContainText('1 open');
+
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.goto(`/?area=${encodeURIComponent(area)}&date=${localDate}`);
+  await expect(page.getByRole('heading', { name: workspaceName })).toBeVisible();
 });
 
 test('Admin console accepts an Admin session and exposes operations data', async ({ page }) => {
