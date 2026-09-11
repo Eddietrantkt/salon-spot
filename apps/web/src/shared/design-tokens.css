@@ -77,15 +77,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .owner-upgrade-steps { display: grid; gap: 10px; padding: 0; margin: 4px 0 0; list-style: none; color: var(--color-text-secondary); }
 .owner-upgrade-steps li { display: flex; gap: 10px; align-items: start; }
 .owner-upgrade-steps li::before { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; background: var(--color-brand-accent-soft); color: var(--color-brand-accent); content: '✓'; font-size: .72rem; font-weight: 800; line-height: 20px; text-align: center; }
-.discovery-hero-intro { container: discovery-hero-intro / inline-size; }
 .search-field label { min-width: 0; }
-@container discovery-hero-intro (max-width: 560px) {
-  .discovery-hero-intro .search-form-hero { grid-template-columns: 1fr; gap: 6px; padding: 8px; }
-  .discovery-hero-intro .search-form-hero .search-field { padding: 10px 8px; border-top: 1px solid #e2e7e2; border-left: 0; }
-  .discovery-hero-intro .search-form-hero .search-field:first-child { border-top: 0; }
-  .discovery-hero-intro .search-form-hero .search-submit { width: 100%; }
-  .discovery-hero-intro .search-form-hero .location-suggestions { padding: 8px 4px 2px; }
-}
 @media (max-width: 1120px) and (min-width: 761px) {
   .site-header { gap: 12px; padding-inline: 24px; }
   .app-nav { gap: 0; }

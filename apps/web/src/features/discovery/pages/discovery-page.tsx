@@ -7,7 +7,14 @@ import { WorkspaceCard } from '../components/workspace-card';
 import { tomorrowInLocalCalendar } from '../../../shared/date/local-date';
 import { useI18n } from '../../../shared/i18n/i18n-provider';
 import { localizedErrorMessage } from '../../../shared/i18n/localized-error-message';
+import { fallbackImageFor } from '../../../shared/ui/media-fallbacks';
+import { ResilientImage } from '../../../shared/ui/resilient-image';
 import { Icon } from '../../../shared/ui/icon';
+
+const stitchHeroImages = {
+  salon: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAH-13AMoSh9vFQaRT4XvfKAoNbUMjkXYeySHdw2InPKshNXF02FhFdW9sXcA1kCvseiE4zXOaXn0fArVN6UK-2x7FHhCrhS1AxLBcw0orkCkyRr2U-SCoDjEW33b2dpnNoSLqCD-O7n9ER736oGRcYRq0b644eypt5GFven4ToWy88gXn7a283rQYG7IDnmDyY3x3RV9zvZa6bVPNk4IZtFW0kYoWndS7B4r-i8rG9frOsVRIhExBcrw',
+  suite: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDGuoD_hXonbSE0vFuRCgZNudwFN9IqJvO8dsNWplqXLY5DwkvahaNU8eX6mxrQdkwpZW4o5XeX7RW9mATsP37odJ0ODsigUNhb03ybiNw86gKlot-R8CX_TnjPQ7X48kIGfisYxB3qevi_kIjnq08O05XYBHJlJxi4OGEqNgCk-NO_JeV5RT_krVNNBS0P5vsF77Oqbu5fjZi52-FC4M74trYpeau5GMi5gXTUJXcBoMhYs5QfTz6XIA'
+} as const;
 
 interface DiscoveryPageProps {
   initialArea: string;
@@ -75,26 +82,24 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
   return (
     <main className="page-shell discovery-shell">
       <header className="discovery-hero">
-        <div className="discovery-hero-intro">
-          <div className="discovery-copy">
-            <p className="eyebrow">{t('THE SALON SPOT · FLEXIBLE BEAUTY SPACES', 'THE SALON SPOT · KHÔNG GIAN LÀM ĐẸP LINH HOẠT')}</p>
-            <h1>{t('Find a workspace that ', 'Tìm không gian ')}<em>{t('fits your craft.', 'phù hợp với tay nghề của bạn.')}</em></h1>
-            <p className="lead">{t('Explore professional-ready salon spaces by location and date. Availability is always confirmed by the live schedule.', 'Khám phá không gian salon chuyên nghiệp theo địa điểm và ngày. Tình trạng còn trống luôn được xác nhận theo lịch trực tiếp.')}</p>
+        <div className="discovery-hero-content">
+          <div className="discovery-hero-intro">
+            <div className="discovery-copy">
+              <p className="eyebrow">{t('THE SALON SPOT · FLEXIBLE BEAUTY SPACES', 'THE SALON SPOT · KHÔNG GIAN LÀM ĐẸP LINH HOẠT')}</p>
+              <h1>{t('Elevate your craft in ', 'Nâng tầm tay nghề tại ')}<em>{t('premium spaces.', 'những không gian cao cấp.')}</em></h1>
+              <p className="lead">{t('Discover and book professional salon workspaces by location and date. Availability is confirmed by the live schedule.', 'Khám phá và đặt không gian salon chuyên nghiệp theo địa điểm và ngày. Tình trạng còn trống được xác nhận theo lịch trực tiếp.')}</p>
+            </div>
+            <div className="discovery-hero-search">
+              <SearchWorkspacesForm
+                area={area}
+                date={date}
+                isLoading={isLoading}
+                onAreaChange={changeArea}
+                onDateChange={changeDate}
+                onSubmit={onSubmit}
+              />
+            </div>
           </div>
-          <div className="discovery-proof-strip" aria-label={t('Explore highlights', 'Điểm nổi bật khi khám phá')}>
-            <span><strong>01</strong>{t('Live availability', 'Lịch trống trực tiếp')}</span>
-            <span><strong>02</strong>{t('Ready-to-work spaces', 'Không gian sẵn sàng làm việc')}</span>
-          </div>
-          <SearchWorkspacesForm
-            area={area}
-            date={date}
-            isLoading={isLoading}
-            onAreaChange={changeArea}
-            onDateChange={changeDate}
-            onSubmit={onSubmit}
-          />
-        </div>
-        <div className="discovery-hero-side">
           <DiscoveryHeroVisual t={t} />
         </div>
       </header>
@@ -121,21 +126,21 @@ export function DiscoveryPage({ initialArea, initialDate, initialHasSearched, on
 
 function DiscoveryHeroVisual({ t }: { t: (english: string, vietnamese: string) => string }): JSX.Element {
   return (
-    <div className="discovery-visual" aria-hidden="true">
-      <div className="visual-orbit visual-orbit-one" />
-      <div className="visual-orbit visual-orbit-two" />
-      <div className="visual-window visual-window-main">
-        <div className="visual-window-topbar"><span /><span /><span /><small>{t('A calm place to create', 'Một nơi thật đẹp để sáng tạo')}</small></div>
-        <div className="visual-window-scene">
-          <div className="scene-sun" />
-          <div className="scene-arch"><span className="scene-mirror" /><span className="scene-chair" /><span className="scene-plant" /></div>
+    <div className="discovery-stitch-visual">
+      <div className="discovery-photo-grid">
+        <div className="discovery-photo discovery-photo-primary">
+          <ResilientImage src={stitchHeroImages.salon} fallbackSrc={fallbackImageFor('Salon station')} width={1600} height={1067} alt={t('Modern salon workspace', 'Không gian salon hiện đại')} />
+          <div className="discovery-photo-caption"><strong>{t('Professional-ready spaces', 'Không gian sẵn sàng làm việc')}</strong><span>{t('Search by area and date', 'Tìm theo khu vực và ngày')}</span></div>
         </div>
-        <div className="visual-window-caption"><span>{t('Open tomorrow', 'Mở lịch ngày mai')}</span><strong>09:00 — 17:00</strong></div>
+        <div className="discovery-photo discovery-photo-secondary">
+          <ResilientImage src={stitchHeroImages.suite} fallbackSrc={fallbackImageFor('Private styling studio')} width={1600} height={1067} alt={t('Private beauty suite', 'Phòng làm đẹp riêng tư')} />
+        </div>
+        <aside className="discovery-trust-card">
+          <span className="discovery-trust-icon"><Icon name="calendar-check" size={22} /></span>
+          <h2>{t('Live availability', 'Lịch trống trực tiếp')}</h2>
+          <p>{t('Choose an area and date to see the slots currently available to book.', 'Chọn khu vực và ngày để xem các khung giờ hiện còn có thể đặt.')}</p>
+        </aside>
       </div>
-      <div className="visual-tile visual-tile-detail"><span className="tile-detail-shape" /><small>{t('Private suite', 'Phòng riêng')}</small></div>
-      <div className="visual-tile visual-tile-texture"><span className="tile-texture-lines" /><small>{t('Made for your craft', 'Sinh ra cho tay nghề của bạn')}</small></div>
-      <div className="visual-note visual-note-top"><span className="visual-note-icon"><Icon name="sparkles" size={15} /></span><span><small>{t('CURATED FOR YOU', 'ĐƯỢC CHỌN CHO BẠN')}</small><strong>{t('A better day starts here', 'Một ngày làm việc bắt đầu từ đây')}</strong></span></div>
-      <div className="visual-note visual-note-bottom"><span className="visual-live-dot" />{t('Live schedule', 'Lịch trực tiếp')}</div>
     </div>
   );
 }

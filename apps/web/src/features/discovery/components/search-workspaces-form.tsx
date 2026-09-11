@@ -34,17 +34,8 @@ export function SearchWorkspacesForm({
   const locationSuggestionsId = useId();
   const [activeField, setActiveField] = useState<'location' | 'date' | null>(null);
 
-  function selectSuggestedLocation(value: string): void {
-    setActiveField('location');
-    onAreaChange(value);
-  }
-
   return (
     <form className={`search-form search-form-${variant}${isLoading ? ' search-form-loading' : ''}`} onSubmit={onSubmit} aria-busy={isLoading}>
-      {variant === 'hero' && <div className="search-form-header">
-        <div><span className="search-form-kicker">{t('SESSION PLANNER', 'LÊN KẾ HOẠCH')}</span><strong>{t('Plan your next session', 'Lên kế hoạch cho buổi làm việc')}</strong></div>
-        <span className="search-form-status"><span className="search-live-dot" aria-hidden="true" />{t('Live', 'Trực tiếp')}</span>
-      </div>}
       <div className={`search-field search-location-field${activeField === 'location' ? ' search-field-active' : ''}`}>
         <span className="search-field-icon"><Icon name="map-pin" /></span>
         <label>
@@ -62,14 +53,7 @@ export function SearchWorkspacesForm({
           <input type="date" min={tomorrowInLocalCalendar()} value={date} onFocus={() => setActiveField('date')} onBlur={() => setActiveField(null)} onChange={(event) => onDateChange(event.target.value)} required />
         </label>
       </div>
-      <button className="search-submit" type="submit" disabled={isLoading}><span>{isLoading ? t('Searching…', 'Đang tìm…') : t('Search workspaces', 'Tìm không gian')}</span><span className="search-submit-icon"><Icon name="arrow-right" /></span></button>
-      {variant === 'hero' && <div className="location-suggestions" aria-label={t('Suggested locations', 'Địa điểm gợi ý')}>
-        <span className="search-live-indicator"><span className="search-live-dot" aria-hidden="true" />{t('Live availability', 'Lịch trống trực tiếp')}</span>
-        {suggestedLocations.map((location) => {
-          const isSelected = area === location.value;
-          return <button key={location.value} className={`location-chip${isSelected ? ' location-chip-selected' : ''}`} type="button" aria-pressed={isSelected} onClick={() => selectSuggestedLocation(location.value)}>{isSelected && <span className="location-chip-check" aria-hidden="true">✓</span>}{t(location.label[0], location.label[1])}</button>;
-        })}
-      </div>}
+      <button className="search-submit" type="submit" disabled={isLoading}><span>{isLoading ? t('Searching…', 'Đang tìm…') : t('Find spaces', 'Tìm không gian')}</span><span className="search-submit-icon"><Icon name="arrow-right" /></span></button>
     </form>
   );
 }
